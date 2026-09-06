@@ -1,0 +1,214 @@
+/* Register tree (left column). Header band 35px, footer band 26px — they line
+   up with the stage tabs / status bar and the dock tabs / dock foot. */
+
+.tree-pane {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 35px;
+  padding: 0 6px 0 10px;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+}
+.pane-title {
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  flex: 1;
+  white-space: nowrap;
+}
+.search {
+  padding: 8px 8px 7px;
+  flex: none;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 27px;
+  padding: 0 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  color: var(--text-faint);
+}
+.search-box:focus-within {
+  border-color: var(--accent);
+}
+.search-glyph {
+  display: inline-flex;
+  color: var(--text-faint);
+}
+.studio .search-box input {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.search-box kbd {
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.tree {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+.tree-group {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 12px 11px 4px;
+}
+.node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 25px;
+  padding-right: 8px;
+  text-align: left;
+  color: var(--text-dim);
+  position: relative;
+}
+.node:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.studio .node .twist {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-faint);
+}
+.studio .node .twist svg {
+  transition: transform 0.12s ease;
+}
+.node[aria-expanded='true'] .twist svg {
+  transform: rotate(90deg);
+}
+.studio .folder-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  text-align: left;
+  color: inherit;
+}
+.node .glyph {
+  flex: none;
+  display: inline-flex;
+  color: var(--text-faint);
+}
+.node .label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+}
+.node.folder .label {
+  font-weight: 600;
+}
+.studio button.node.file {
+  display: flex;
+  text-align: left;
+  color: var(--text-dim);
+}
+.studio button.node.file:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.node.file.active {
+  background: var(--row-sel);
+  color: var(--text);
+}
+.node.file.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+}
+.node.file.active .label {
+  font-weight: 600;
+}
+/* Rename / delete, on a folder row that has a name anyone may change.
+   Reserved in the flow rather than absolutely positioned, so nothing under
+   the pointer moves when it appears — and revealed on focus as well as on
+   hover, because a menu only a mouse can find is not a menu. */
+.studio .node .row-menu {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  color: var(--text-faint);
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.node:hover .row-menu,
+.node:focus-within .row-menu,
+.studio .node .row-menu[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.studio .node .row-menu:hover,
+.studio .node .row-menu[aria-expanded='true'] {
+  color: var(--text);
+}
+
+.studio .node .row-menu:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 3px;
+}
+
+.count {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  flex: none;
+}
+.tree-foot {
+  flex: none;
+  height: 26px;
+  border-top: 1px solid var(--border);
+  /* One footer, three columns: the same band colour as .status and .dock-foot
+     so the row reads across the whole window rather than as three boxes. */
+  background: var(--panel-2);
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}

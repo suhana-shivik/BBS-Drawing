@@ -1,0 +1,261 @@
+/* The authentication surface. Same tokens, same bar, same card treatment as
+   the Projects home — this is one more screen in the product, not a different
+   product. Every colour is a theme token, so it follows light/dark with
+   everything else. */
+
+.auth-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  overflow: auto;
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex: none;
+}
+
+.auth-logo {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.auth-brand {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-body {
+  flex: 1;
+  display: flex;
+  padding: 32px 22px 48px;
+  min-height: 0;
+}
+
+/* Centred by auto margins rather than by `align-items`/`justify-content`:
+   flex centring clips the top of a box taller than its scroll container, and
+   the register view — six fields plus an error line — can be exactly that on
+   a short window. `margin: auto` centres and still scrolls. */
+.auth-card,
+.auth-setup,
+.auth-booting {
+  margin: auto;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 28px 30px 26px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-card h1 {
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.auth-card .auth-sub {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin: 7px 0 6px;
+  line-height: 1.5;
+}
+
+/* --- field ------------------------------------------------------------- */
+
+.auth-field {
+  display: block;
+  margin-top: 16px;
+}
+
+.auth-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 0 0 5px;
+}
+
+.auth-field input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.auth-field input:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+.auth-field.invalid input {
+  border-color: var(--danger);
+}
+
+.auth-field.invalid input:focus {
+  box-shadow: 0 0 0 3px var(--danger-bg);
+}
+
+.auth-field-error {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+/* --- form-level messages ----------------------------------------------- */
+
+.auth-error,
+.auth-notice {
+  margin: 14px 0 0;
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  border: 1px solid transparent;
+}
+
+.auth-error {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger);
+}
+
+.auth-notice {
+  background: var(--info-bg);
+  color: var(--info-text);
+  border-color: var(--accent);
+}
+
+/* --- actions ----------------------------------------------------------- */
+
+.auth-submit {
+  margin-top: 22px;
+  width: 100%;
+  justify-content: center;
+  height: 38px;
+  font-size: 13.5px;
+  border-radius: 6px;
+}
+
+.auth-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.auth-links {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--row-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.auth-links-sep {
+  flex: 1;
+}
+
+.auth-alt {
+  color: var(--text-dim);
+}
+
+.auth-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-link:hover {
+  background: none;
+  border-color: transparent;
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.auth-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* --- the unconfigured state -------------------------------------------- */
+
+.auth-setup {
+  width: 100%;
+  max-width: 460px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 24px 26px;
+}
+
+.auth-setup h1 {
+  font-size: 16px;
+  font-weight: 650;
+  margin: 0 0 8px;
+}
+
+.auth-setup p {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  margin: 0 0 8px;
+}
+
+.auth-setup code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+/* --- the booting state -------------------------------------------------- */
+
+.auth-booting {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+@media (max-width: 460px) {
+  .auth-body { padding: 20px 14px 32px; }
+  .auth-card { padding: 22px 20px 20px; border-radius: 10px; }
+}

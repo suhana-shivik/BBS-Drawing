@@ -1,0 +1,83 @@
+/* Status bar — the stage's share of the 26px footer band. .tree-foot and
+   .dock-foot carry the same height, colour and padding, so the three columns
+   line up as one row. */
+
+.status {
+  /* Pinned to the stage's LAST row. ToolStrip renders nothing off a sheet, so
+     the stage has three children against four tracks, and auto-placement would
+     drop this bar into the `auto` row and leave the 26px band empty below it —
+     the footer then reads as three boxes at two heights, not as one row. */
+  grid-row: -2 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  padding: 0 11px;
+  background: var(--panel-2);
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--text-dim);
+  overflow: hidden;
+}
+.status > * {
+  flex: none;
+  white-space: nowrap;
+}
+.status .coord {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+.status .hint {
+  color: var(--text-faint);
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The surface note — what this sheet IS, when the strip would otherwise
+   imply something it cannot do. Never tool text; that is the hint. */
+.status .note {
+  color: var(--warn);
+  flex: 0 2 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio .status button.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.studio .status button.chip:disabled:hover {
+  background: none;
+  color: var(--text-faint);
+}
+.status .spring {
+  flex: 1 1 8px;
+  min-width: 8px;
+}
+.status .chip {
+  padding: 1px 7px;
+  border-radius: 3px;
+}
+.studio .status button.chip {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+}
+.studio .status button.chip:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.studio .status button.chip.on {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.studio .status button.issues.ok {
+  color: var(--ok);
+}
+.studio .status button.issues.warn {
+  color: var(--warn);
+}
+.status .bar-sep {
+  height: 13px;
+}

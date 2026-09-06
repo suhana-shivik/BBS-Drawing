@@ -1,0 +1,174 @@
+/* Tool strip — below the drawing. Collapsed it keeps its handle, the active
+   tool name and the snap flags: never a control with no way back. */
+
+/* The strip and its arming row occupy ONE stage grid row between them (the
+   `auto` track in shell.css), so the status bar stays pinned to the last row
+   and the footer sections keep aligning. */
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.toolstrip {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 40px;
+  padding: 0 6px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.toolstrip::-webkit-scrollbar {
+  height: 0;
+}
+.toolstrip.collapsed {
+  height: 28px;
+}
+
+.studio .strip-handle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  height: 26px;
+  padding: 0 9px 0 5px;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+}
+.studio .strip-handle:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.strip-handle .cap {
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.strip-handle .chev {
+  display: inline-flex;
+  transition: transform 0.14s ease;
+}
+.toolstrip.collapsed .strip-handle .chev {
+  transform: rotate(-90deg);
+}
+
+.strip-active {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  padding-right: 4px;
+  white-space: nowrap;
+}
+.strip-active b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.studio .tool {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  position: relative;
+}
+.studio .tool:hover {
+  color: var(--text);
+  background: var(--row-hover);
+}
+.studio .tool[aria-pressed='true'] {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+.tool[aria-pressed='true']::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+.strip-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 5px;
+  flex: none;
+}
+.strip-tail {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 12px;
+  flex: none;
+}
+.studio .snap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+.studio .snap:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+.studio .snap.on {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+/* §14.3 — the flags are model state. With no model open they have nowhere to
+   live, and the control says so instead of pretending to toggle. */
+.studio .snap:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.studio .snap:disabled:hover {
+  color: var(--text-faint);
+  background: none;
+}
+
+/* UNDO / DELETE — the two ways back from something drawn by accident. They sit
+   with the snap flags because that tail is the strip's "state of the surface"
+   group, and they take the same shape so the row reads as one row. Disabled,
+   they say what would make them work rather than going grey in silence. */
+.studio .strip-act {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+}
+.studio .strip-act:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--panel-2);
+}
+.studio .strip-act:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.strip-act svg {
+  opacity: 0.85;
+}

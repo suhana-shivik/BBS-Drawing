@@ -1,0 +1,35 @@
+# Run the DWG converter without installing .NET:
+#
+#   cd services/dwg-convert
+#   docker compose up --build
+#
+# Then point the app at it with VITE_DWG_SERVICE_URL=http://localhost:5179
+# (already the default in .env.example).
+
+services:
+  dwg-convert:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bimcad/dwg-convert:local
+    container_name: bimcad-dwg-convert
+    ports:
+      - "5179:5179"
+    environment:
+      PORT: "5179"
+      # Comma-separated. Add the production origin here; "*" allows any.
+      #
+      # The whole Vite range is listed, not just 5173. Vite walks upwards when
+      # a port is busy, so one dev server left running from yesterday puts the
+      # app on 5174 — and the converter then refuses it with no CORS header,
+      # which in the browser is indistinguishable from "the service is down".
+      # 5179 is ours and is deliberately absent from the list.
+      ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5180,http://localhost:5181,http://localhost:5182,http://localhost:5183,http://127.0.0.1:5173"
+      MAX_UPLOAD_MB: "200"
+      CONVERT_TIMEOUT_SECONDS: "180"
+      # Structured one-line logs; drop to Debug when diagnosing a drawing.
+      Logging__LogLevel__Default: "Information"
+    # Uploads and the converted DXF are both buffered in memory. Give the
+    # container real headroom or a 200 MB drawing will OOM mid-convert.
+    mem_limit: 2g
+    restart: unless-stopped

@@ -1,0 +1,367 @@
+/* Files view — a grid row of the stage, not an overlay. */
+
+.browser {
+  display: grid;
+  grid-template-rows: 38px 40px minmax(0, 1fr);
+  background: var(--panel);
+  min-height: 0;
+}
+/* Restated: a class that sets `display` outranks the UA [hidden] rule. */
+.browser[hidden],
+.viewport[hidden],
+.toolstrip[hidden] {
+  display: none;
+}
+
+.bnav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+}
+.bcrumb {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  margin-left: 6px;
+  padding: 0 4px;
+  height: 27px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg);
+  overflow: hidden;
+}
+.studio .bcrumb button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 21px;
+  padding: 0 7px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.studio .bcrumb button:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.studio .bcrumb button:last-child {
+  color: var(--text);
+  font-weight: 600;
+}
+.bcrumb .sep {
+  color: var(--text-faint);
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.bfind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 190px;
+  height: 27px;
+  padding: 0 8px;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--bg);
+  color: var(--text-faint);
+}
+.studio .bfind input {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.btools {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-2);
+}
+.studio .btool {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.studio .btool:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.studio .btool:disabled {
+  opacity: 0.4;
+}
+.studio .btool:disabled:hover {
+  background: none;
+  color: var(--text-dim);
+}
+.studio .btool.icon {
+  padding: 0;
+  width: 30px;
+  justify-content: center;
+}
+.btools .bar-sep {
+  margin: 0 4px;
+}
+/* A menu button's caret belongs to the verb, not to the gap after it. */
+.studio .btool[aria-haspopup='menu'] svg:last-child {
+  margin-left: -2px;
+  color: var(--text-faint);
+}
+.bcount {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  padding-right: 4px;
+  white-space: nowrap;
+}
+
+.bbody {
+  overflow: auto;
+  padding: 14px 16px 24px;
+}
+/* The details list runs edge to edge — a file manager's rows are the width of
+   the pane, and the sticky header sits against the toolbar above it. */
+.bbody.list {
+  padding: 0;
+  overflow: hidden;
+  display: grid;
+  min-height: 0;
+}
+.bgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 10px;
+}
+.bgrid.small {
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+}
+.bgroup {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 12px 2px 2px;
+}
+.bgroup:first-child {
+  padding-top: 0;
+}
+.bgroup .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.studio .bitem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px 11px;
+  border-radius: var(--r);
+  border: 1px solid transparent;
+  position: relative;
+  text-align: center;
+}
+.studio .bitem:hover {
+  background: var(--row-hover);
+}
+.studio .bitem.on {
+  background: var(--row-sel);
+  border-color: var(--row-sel-border);
+}
+.bthumb {
+  width: 118px;
+  height: 78px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex: none;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+.bgrid.small .bthumb {
+  width: 84px;
+  height: 56px;
+}
+.bthumb svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bthumb.doc {
+  background: var(--panel-2);
+}
+.bthumb.folder-thumb {
+  background: transparent;
+  border-color: transparent;
+}
+.bthumb.folder-thumb svg {
+  width: 72px;
+  height: 58px;
+}
+.bthumb .ext {
+  font-family: var(--ff-cond);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 3px;
+  background: var(--danger);
+  color: #fff;
+}
+.bthumb .ext.csv { background: var(--ok); }
+.bthumb .ext.xlsx { background: #1d6f42; }
+.bthumb .ext.dxf { background: var(--accent); }
+.bname {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--text);
+  word-break: break-word;
+}
+.bmeta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+/* Wide columns scroll inside the list, never the page. */
+.blist-scroll {
+  overflow: auto;
+  min-height: 0;
+}
+.blist {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  table-layout: auto;
+}
+.blist th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+  text-align: left;
+  padding: 0;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+/* The header IS the sort control, so it is a button the full width of the
+   column — not a label with a hit target hidden inside it. */
+.studio .blist th button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  height: 30px;
+  padding: 0 12px;
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.studio .blist th button:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.studio .blist th[aria-sort='ascending'] button,
+.studio .blist th[aria-sort='descending'] button {
+  color: var(--text);
+}
+.blist th.num button {
+  justify-content: flex-end;
+}
+.blist td {
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.blist td.n {
+  color: var(--text);
+  font-weight: 500;
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.blist td.n .row-ic {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: -3px;
+  margin-right: 9px;
+  color: var(--text-faint);
+}
+/* Folders wear the manila colour they wear in the tiles and in the pane. */
+.blist td.n .row-ic.folder {
+  color: #d9a13c;
+}
+.blist td.mono,
+.blist td.num {
+  font-family: var(--ff-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.blist td.num {
+  text-align: right;
+}
+/* A time reads as a figure, not as prose — tabular so the column scans. */
+.blist td.when {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.blist tbody tr {
+  cursor: default;
+}
+.blist tbody tr:hover td {
+  background: var(--row-hover);
+}
+.blist tbody tr.on td {
+  background: var(--row-sel);
+}
+
+.bempty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 60px 20px;
+  text-align: center;
+}
+.bempty .vt {
+  font-family: var(--ff-cond);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.bempty .vs {
+  font-size: 12.5px;
+  color: var(--text-faint);
+}

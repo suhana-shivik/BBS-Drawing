@@ -1,0 +1,684 @@
+/* R4 — the Specification view (stage) + the shared rows the dock tab reuses. */
+
+.spec-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.spec-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 11px 16px 9px;
+  border-bottom: 1px solid var(--border);
+}
+.spec-head h2 {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.spec-head .sub {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+.spec-head .spacer {
+  flex: 1 1 auto;
+}
+.spec-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.spec-filter input {
+  accent-color: var(--accent);
+  margin: 0;
+}
+.spec-filter.off {
+  opacity: var(--disabled-opacity, 0.5);
+  cursor: default;
+}
+
+.spec-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+  padding: 7px 16px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.spec-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 16px 28px;
+}
+
+.spec-empty {
+  padding: 18px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* --- the dock tab ---------------------------------------------------------
+ *
+ * The same rows in a 400px column. It had no styles at all, so the head and
+ * the rows ran to both edges and the row content ran past the right one.
+ */
+.spec-dock {
+  padding-bottom: 20px;
+}
+/* `.dock-body` is the one scroller — see the note at the top of Dock.css. This
+   panel is content: it takes the gutter the rows had none of, nothing more. */
+.spec-dock > .about-drawing,
+.spec-dock > .spec-rows {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+/* The dock's own head already has its padding; the rows sit under it. */
+.spec-dock > .spec-rows {
+  padding-top: 2px;
+}
+
+/* --- groups + rows --------------------------------------------------------- */
+
+/* The row measures itself against the panel it is in, not against the stage.
+   The dock is ~400px wide and the stage is not, and one fixed row shape
+   cannot be right in both. */
+.spec-rows {
+  container-type: inline-size;
+}
+
+.spec-group {
+  margin-top: 14px;
+}
+.spec-group:first-child {
+  margin-top: 6px;
+}
+.spec-subject {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0 3px;
+  background: var(--panel);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  color: var(--text-faint);
+}
+.spec-subject .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.spec-row {
+  border-bottom: 1px solid var(--hairline);
+}
+.spec-row:last-child {
+  border-bottom: 0;
+}
+
+/*
+ * TWO LINES WHEN IT HAS TO BE, ONE WHEN IT FITS.
+ *
+ * This was a nowrap flex row of a 130px name, a 110px value, unshrinkable
+ * chips and a context column. In the dock that adds up to more than the panel
+ * is wide, and the overflow went off the right edge with no scrollbar and no
+ * ellipsis — "not tied to a drawing" sliced down the middle, the supplier and
+ * date behind it never reachable at all. A grid gives the context line
+ * somewhere to go instead of somewhere to be cut.
+ */
+.spec-line {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, auto) minmax(0, 1fr);
+  grid-template-areas:
+    'name val tags'
+    'ctx  ctx ctx';
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 1px;
+  width: 100%;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  padding: 6px 6px 6px 5px;
+  cursor: pointer;
+  border-radius: var(--r-sm, 4px);
+}
+@container (min-width: 640px) {
+  .spec-line {
+    grid-template-columns: minmax(140px, auto) minmax(110px, auto) auto minmax(0, 1fr);
+    grid-template-areas: 'name val tags ctx';
+    row-gap: 0;
+  }
+}
+.spec-line:hover {
+  background: var(--row-hover);
+}
+.spec-row.open .spec-line {
+  background: var(--row-selected);
+  border-left-color: var(--accent);
+}
+.spec-line .name {
+  grid-area: name;
+  min-width: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+.spec-line .val {
+  grid-area: val;
+  min-width: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.spec-line .tags {
+  grid-area: tags;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+.spec-line .ctx {
+  grid-area: ctx;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* state chips — colour is a role, never decoration */
+.spec-chip {
+  flex: none;
+  max-width: 100%;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--panel-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.spec-chip.ok {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-color: transparent;
+}
+.spec-chip.accent {
+  background: var(--info-bg);
+  color: var(--info-text);
+  border-color: transparent;
+}
+.spec-chip.warn {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border-color: transparent;
+}
+.spec-chip.dim {
+  opacity: 0.75;
+}
+
+/* --- expansion ------------------------------------------------------------- */
+
+.spec-detail {
+  margin: 2px 0 8px 7px;
+  padding: 8px 10px 10px 12px;
+  border-left: 2px solid var(--hairline);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+.spec-detail .drow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px 8px;
+  flex-wrap: wrap;
+}
+.spec-detail .drow.ask {
+  padding: 6px 8px;
+  margin: 1px 0;
+  border-radius: var(--r-sm, 4px);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.spec-detail .k {
+  flex: none;
+  min-width: 74px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.spec-detail .k.warn {
+  color: var(--warning-text);
+}
+.spec-detail .raw {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.spec-detail .dim,
+.spec-history .why,
+.spec-history .when,
+.spec-impact .dim {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.spec-chain {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.spec-chain button {
+  border: 0;
+  background: none;
+  padding: 1px 3px;
+  font: inherit;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  border-radius: 3px;
+}
+.spec-chain button:hover {
+  background: var(--info-bg);
+  text-decoration: underline;
+}
+.spec-chain .sep {
+  color: var(--text-faint);
+}
+
+.spec-answer {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.spec-answer input {
+  flex: 1 1 180px;
+  min-width: 0;
+  max-width: 260px;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 4px);
+  background: var(--panel);
+  color: var(--text);
+}
+.spec-answer input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  border-color: var(--accent);
+}
+.spec-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px 10px;
+  flex-wrap: wrap;
+}
+
+/* --- history --------------------------------------------------------------- */
+
+.spec-history {
+  border-top: 1px dashed var(--border-light);
+  padding-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.spec-history .h {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.spec-hrow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.spec-hrow .old {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* --- facts nothing can place ----------------------------------------------
+ *
+ * Listed on every drawing on purpose — hiding one makes it unreachable from
+ * every surface. But standing among the open drawing's own rows it reads as
+ * one of them, which is how a value answered on the columns sheet came to head
+ * the pedestal sheet's specification. Same rows, folded away, saying what they
+ * are.
+ */
+.spec-loose {
+  margin-top: 18px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius, 6px);
+  background: var(--panel-2);
+  padding: 0 10px;
+}
+.spec-loose > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.spec-loose > summary::-webkit-details-marker {
+  display: none;
+}
+.spec-loose > summary::before {
+  content: '▸';
+  font-size: 9px;
+  color: var(--text-faint);
+  transition: transform 0.12s ease;
+}
+.spec-loose[open] > summary::before {
+  transform: rotate(90deg);
+}
+.spec-loose .lt {
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+.spec-loose .ln {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+.spec-loose .lwhy {
+  margin: 0 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hairline);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.spec-loose .spec-subject {
+  background: var(--panel-2);
+}
+.spec-loose .spec-group:first-of-type {
+  margin-top: 4px;
+}
+
+/* --- revision impact (§5.4) ------------------------------------------------ */
+
+.spec-impact-pill {
+  margin: 8px 16px 0;
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.spec-impact-pill:hover {
+  background: var(--row-hover);
+}
+
+.spec-impact {
+  margin: 10px 16px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 6px);
+  background: var(--panel-2);
+  padding: 8px 12px 10px;
+  font-size: 11.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.spec-impact .ihead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.spec-impact .ihead .spacer {
+  flex: 1;
+}
+.spec-impact .irow {
+  display: flex;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-top: 4px;
+}
+.spec-impact .irow.warn .k {
+  color: var(--warning-text);
+}
+.spec-impact .irow.accent .k {
+  color: var(--info-text);
+}
+.spec-impact .ichange {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-left: 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.spec-impact .ichange .id {
+  font-weight: 600;
+}
+.spec-impact .ichange s {
+  color: var(--text-faint);
+}
+.spec-impact .arrow {
+  color: var(--text-faint);
+}
+.about-drawing {
+  margin: 10px 0 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 6px);
+  background: var(--panel-2);
+}
+.about-drawing > summary {
+  list-style: none;
+}
+.about-drawing > summary::-webkit-details-marker {
+  display: none;
+}
+.about-drawing > summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  color: var(--text-faint);
+}
+.about-drawing[open] > summary::before {
+  transform: rotate(90deg);
+}
+.about-drawing > summary,
+.about-section-note > summary {
+  cursor: pointer;
+  padding: 7px 9px;
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.about-drawing-body {
+  padding: 0 9px 9px;
+}
+.about-drawing-body small {
+  color: var(--text-faint);
+}
+.about-drawing pre,
+.about-section-note pre {
+  margin-top: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 10.5px/1.45 'IBM Plex Mono', monospace;
+  color: var(--text-dim);
+}
+.about-section-note {
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+/* --- About Drawing: one section's reading, laid out ------------------------
+ *
+ * The flat note is capped because it goes into a prompt. This is the page, so
+ * nothing here truncates: the reader is checking the record against the sheet,
+ * and the rows they came to find are exactly the ones a cap would hide. Three
+ * kinds get three shapes, because callouts, dimensions and text are three
+ * different questions.
+ */
+.asn-tally {
+  margin-left: 8px;
+  color: var(--text-faint);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.asn-detail {
+  padding: 4px 0 2px;
+}
+.asn-detail h4 {
+  margin: 12px 0 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.asn-n {
+  margin-left: 5px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--panel-3);
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.asn-made-of {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  align-items: center;
+  font-size: 10.5px;
+  color: var(--text-dim);
+}
+.asn-made-of.layers {
+  margin-top: 4px;
+}
+.asn-kind {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.asn-chip {
+  padding: 1px 5px;
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+}
+.asn-chip.layer {
+  border-style: dashed;
+  color: var(--text-faint);
+}
+/* In the dock this table gets ~370px. Wrapping a long callout is readable;
+   scrolling the panel sideways to reach the "legs" column is not. */
+.asn-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.asn-table th {
+  padding: 3px 6px 3px 0;
+  border-bottom: 1px solid var(--hairline);
+  text-align: left;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.asn-table td {
+  padding: 3px 6px 3px 0;
+  border-bottom: 1px solid var(--hairline-soft, rgba(127, 135, 148, 0.14));
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+/* The sheet's own words get the room; the parsed columns are narrow numbers. */
+.asn-table th:first-child,
+.asn-table td:first-child {
+  width: 42%;
+}
+.asn-table .mono {
+  font-family: var(--mono, ui-monospace, monospace);
+  color: var(--text);
+}
+/* A detailer's written override is what the yard cuts to, so it reads as the
+   answer rather than as an aside. */
+.asn-written {
+  color: var(--accent);
+  font-weight: 600;
+}
+.asn-text {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+.asn-text li {
+  padding: 1px 0;
+  overflow-wrap: anywhere;
+}
+.asn-none {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-style: italic;
+}

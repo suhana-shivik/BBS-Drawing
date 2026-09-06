@@ -1,0 +1,118 @@
+/* The Library tab — a catalogue that arms a tool, not a browser. */
+
+.library {
+  padding: 12px 14px 18px;
+  overflow-y: auto;
+}
+
+.lib-head {
+  margin-bottom: 14px;
+}
+.lib-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text);
+}
+.lib-sub {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.lib-sub b {
+  color: var(--text-dim);
+  font-weight: 650;
+}
+
+.lib-group {
+  margin-bottom: 14px;
+}
+.lib-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 0 6px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 8px;
+}
+.lib-group-name {
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.lib-group-arms {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.lib-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 6px;
+}
+
+.studio .lib-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 9px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  color: var(--text-dim);
+}
+.studio .lib-item:hover {
+  border-color: var(--text-faint);
+  background: var(--row-hover);
+  color: var(--text);
+}
+.studio .lib-item.armed {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+.li-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.li-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.li-armed {
+  margin-left: auto;
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-on, #0b1220);
+  font-family: var(--ff-cond);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.li-dims {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.li-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

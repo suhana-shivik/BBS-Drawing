@@ -1,0 +1,5 @@
+# .NET build output. Scoped here rather than in the repo-root .gitignore so the
+# service stays self-contained.
+bin/
+obj/
+*.user

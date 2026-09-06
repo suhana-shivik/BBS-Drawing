@@ -1,0 +1,152 @@
+/* Sheet strip — the stage's 35px header band. */
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+.tab-list {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  overflow-x: auto;
+}
+.tab-list::-webkit-scrollbar {
+  height: 0;
+}
+/* Past a few sheets the entity badge starts eating the name; the name is what
+   you steer by, so the badge goes first. */
+.tab-list.dense .count {
+  display: none;
+}
+/* A tab is a div[role=button], not a <button>: Chromium will not start a drag
+   on a form control, so the tag is what stood between the strip and
+   drag-to-reorder. That means the `.studio button` reset no longer reaches it
+   and the two properties it was borrowing are set here. */
+.studio .tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 9px 0 11px;
+  max-width: 230px;
+  min-width: 104px;
+  border-right: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 12px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+.studio .tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.studio .tab:hover {
+  color: var(--text);
+}
+.studio .tab.active {
+  background: var(--canvas);
+  color: var(--canvas-text);
+}
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--accent);
+}
+.tab .name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.tab .count {
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  flex: none;
+}
+.tab .x {
+  width: 15px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  flex: none;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.tab .x:hover {
+  background: rgba(128, 128, 128, 0.28);
+  opacity: 1;
+}
+.studio .tab.files {
+  min-width: 0;
+  border-right: 1px solid var(--border);
+}
+.studio .tab.files.active {
+  background: var(--panel);
+  color: var(--text);
+}
+.sheet-tools {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px 0 12px;
+  flex: none;
+}
+.find-mark {
+  padding: 4px 8px 8px;
+}
+.studio .find-mark input,
+.pop .find-mark input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  padding: 4px 8px;
+  font-family: var(--ff-mono);
+  font-size: 12.5px;
+  color: var(--text);
+  outline: none;
+}
+.pop .find-mark input:focus {
+  border-color: var(--accent);
+}
+
+/* --- drag to reorder ------------------------------------------------------
+   Every tab in the strip drags, Files and the Specification included. It runs
+   on pointer events (see SheetStrip.tsx), so the tab has to claim the gesture
+   from the strip's own horizontal scroll — hence touch-action.
+   The insertion mark is an inset shadow rather than a pseudo-element: `::after`
+   is already the active tab's accent underline, and one of the two would have
+   to win on the tab you are dropping onto. */
+.studio .tab {
+  touch-action: none;
+}
+/* The tab in flight rides above its neighbours and under the cursor. */
+.studio .tab.dragging {
+  z-index: 3;
+  opacity: 0.9;
+  cursor: grabbing;
+  box-shadow: var(--shadow-sm);
+}
+.studio .tab.dragging .x {
+  /* Nothing to close mid-drag; the cross under a moving cursor is a trap. */
+  visibility: hidden;
+}
+.studio .tab.drop-before {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.studio .tab.drop-after {
+  box-shadow: inset -2px 0 0 var(--accent);
+}

@@ -1,0 +1,399 @@
+/* The schedule. Every digit column is tabular — a schedule whose decimal
+   points do not line up cannot be scanned. Selection amber marks the current
+   selection ONLY. */
+
+.bbs-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bbs-shape-note {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.bbs-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+table.bbs {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11.5px;
+}
+.bbs thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel-2);
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: left;
+  padding: 6px 8px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+.bbs thead th.num {
+  text-align: right;
+}
+.bbs td {
+  padding: 5px 8px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--hairline);
+  color: var(--text-dim);
+}
+.bbs td.num {
+  text-align: right;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+}
+.bbs .disclose-col {
+  width: 24px;
+  padding: 0 0 0 4px;
+}
+.studio .disclose,
+.bbs .disclose {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  color: var(--text-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.bbs .disclose:hover {
+  background: var(--row-hover);
+  color: var(--text);
+}
+.bbs .disclose svg {
+  transition: transform 0.12s ease;
+}
+.bbs-row[aria-expanded='true'] .disclose svg {
+  transform: rotate(90deg);
+}
+
+.bbs-group-row td {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+}
+.bbs-row {
+  cursor: pointer;
+}
+.bbs-row:hover td {
+  background: var(--row-hover);
+}
+.bbs-row.selected td {
+  /* The one use of selection amber in this table. */
+  background: color-mix(in srgb, var(--selection) 14%, transparent);
+}
+.bbs-row.selected td:first-child {
+  box-shadow: inset 2px 0 0 var(--selection);
+}
+.bbs-row.unavailable td {
+  color: var(--text-faint);
+}
+.bbs-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.row-flag {
+  display: inline-flex;
+  color: var(--warn);
+  margin-left: 5px;
+  vertical-align: -1px;
+}
+
+.bbs-subtotal td {
+  background: var(--panel-2);
+  font-weight: 600;
+  color: var(--text);
+}
+.bbs-total td {
+  background: var(--panel-2);
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* --- derivation block (opens IN PLACE below the row) ---------------------- */
+
+.bbs-derivation-row > td {
+  padding: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  white-space: normal;
+}
+.derivation {
+  border-left: 2px solid var(--accent);
+  margin: 6px 10px 12px 14px;
+  padding: 10px 14px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.derivation section h4 {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 5px;
+}
+.deriv-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.shape-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-dim);
+}
+.shape-code {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.deriv-legs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 18px;
+}
+.leg-chip {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+}
+.source-badge {
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--info-bg);
+  color: var(--accent);
+}
+.source-badge.entered {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.source-badge.unavailable {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.deriv-table {
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.deriv-table td {
+  border: none;
+  padding: 2px 12px 2px 0;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.deriv-table td.lbl {
+  font-family: var(--ff-mono);
+  color: var(--text-faint);
+  width: 32px;
+}
+.deriv-table td.num {
+  text-align: right;
+  font-family: var(--ff-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 92px;
+}
+.deriv-table tr.deduction td {
+  color: var(--text-faint);
+}
+.deriv-table tr.rule-row td {
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+.deriv-table .strong {
+  font-weight: 600;
+  color: var(--text);
+}
+.working {
+  padding-top: 5px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.missing {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 7px;
+  padding: 7px 9px;
+  border-radius: var(--r-sm);
+  background: var(--warn-bg);
+  color: var(--warn);
+  font-size: 11.5px;
+}
+.evidence-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.evidence-row .ev {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--border-light);
+  background: var(--panel);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.evidence-row .ev.none {
+  border-style: solid;
+  font-style: italic;
+}
+.evidence-row .status-verified {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.evidence-row .status-inferred {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.evidence-row .status-unavailable {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.deriv-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.warning-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--warn);
+  font-size: 11.5px;
+}
+
+/* --- steel summary --------------------------------------------------------- */
+
+.bbs-summary h3 {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 7px;
+}
+.bbs-summary h3 .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.bbs-summary-table {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+
+/* --- §6.4 blocked rows: a formula with a hole, never a blank --------------- */
+
+.bbs td .cell-blocked {
+  font-family: var(--ff-mono);
+  font-size: 10.5px;
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.bbs .blocked-total {
+  text-align: right;
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  color: var(--warning-text);
+}
+.row-blocked {
+  border: 1px solid var(--warning);
+  border-radius: var(--r);
+  background: var(--warning-bg);
+  padding: 9px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.row-blocked h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warning-text);
+}
+.blocked-formula {
+  margin: 0;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  color: var(--text);
+}
+.blocked-answered {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.blocked-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.blocked-answer label {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.blocked-answer-row {
+  display: flex;
+  gap: 6px;
+}
+.blocked-answer-row input {
+  flex: 1;
+  min-width: 0;
+}

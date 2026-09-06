@@ -1,0 +1,188 @@
+/* Viewport — permanently CAD black. --canvas is --bg-canvas (#101216) in both
+   themes; the grid is drawn behind whatever the sheet paints. */
+
+.viewport {
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(var(--grid-minor) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(var(--grid-major) 1px, transparent 1px) 0 0 / 100px 100px,
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px) 0 0 / 100px 100px,
+    var(--canvas);
+}
+.viewport .pane {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.viewport .pane:active {
+  cursor: grabbing;
+}
+.viewport .sheet {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  display: grid;
+  place-items: center;
+  padding: 14px 18px;
+}
+.viewport .sheet svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* The viewBox frames the drawing's CONTENT, so an entity left at the origin
+     of a drawing that sits far from it falls outside the box. It is still
+     drawn — `.pane` is what clips, so panning out to a stray reaches it —
+     rather than being framed and shrinking the drawing to a speck. */
+  overflow: visible;
+}
+/* The drafting overlay — the editor's canvas, above the sheet SVG and inside
+   the same pan/zoom pane. It is TRANSPARENT: the underlay must stay visible
+   through it (§12 — a CAD sheet is an underlay, never edited). Pointer events
+   are off unless the layer is `hot`, so the shell keeps drag-to-pan, the
+   marquee-free navigation gestures and the amber handle highlight it had. */
+.viewport .editor-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.viewport .editor-layer.hot {
+  pointer-events: auto;
+}
+.viewport .editor-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: transparent;
+  touch-action: none;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Isolate dims everything but concrete, reinforcement and the selection. */
+.viewport .sheet.isolated [data-layer]:not([data-layer='CONC']):not([data-layer='RBAR']) {
+  opacity: 0.16;
+}
+
+/* Selection amber marks the selection — nothing else (§2.1). The viewport is
+   permanently dark, so the dark-theme amber is used in both themes. */
+.viewport .sheet [data-handle].sel {
+  stroke: #ffb648 !important;
+  fill: none;
+}
+.viewport .sheet text[data-handle].sel {
+  fill: #ffb648 !important;
+  stroke: none !important;
+}
+
+.vp-chip {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 11px;
+  border-radius: var(--r);
+  background: rgba(20, 23, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--canvas-dim);
+  font-size: 11.5px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+.vp-chip b {
+  /* Selection amber marks the selection — nothing else. */
+  color: var(--selection);
+  font-family: var(--ff-mono);
+  font-weight: 600;
+}
+.vp-chip .sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.void {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  text-align: center;
+  padding: 24px;
+}
+.void .vt {
+  font-family: var(--ff-cond);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--canvas-text);
+}
+.void .vs {
+  font-size: 12.5px;
+  color: var(--canvas-dim);
+  max-width: 340px;
+}
+
+/* The window controls — minimize and maximize, in the drawing's own
+   bottom-right corner. They sit ABOVE the editor overlay (z-index 2) or a
+   drafting gesture would swallow the click, and they are the only thing in
+   the viewport that stays reachable while the window chrome is collapsed. */
+.vp-window {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r);
+  background: rgba(20, 23, 28, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
+}
+.studio .vp-window .vp-win {
+  width: 26px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  color: var(--canvas-dim);
+}
+.studio .vp-window .vp-win:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--canvas-text);
+}
+.studio .vp-window .vp-win:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+/* --- the read, drawn onto the drawing -------------------------------------
+   THERE ARE DELIBERATELY NO COLOURS HERE.
+
+   Every mark carries its own fill, stroke and width as presentation
+   attributes in the SVG (studio/sheetSvg.ts), and the hover/chosen emphasis
+   is written as an inline style by the Viewport. The Files preview renders
+   the very same SVG string with none of this stylesheet in scope and shows
+   the marks correctly; the canvas did not. Rather than keep hunting for
+   which rule differed, the rules are gone — the two now render the marks
+   under identical conditions, which is the only way to be sure they agree.
+
+   The one thing left is the pointer: a mark must never eat a gesture that
+   belongs to the drawing underneath it. */
+.viewport .sheet-marks {
+  pointer-events: none;
+}

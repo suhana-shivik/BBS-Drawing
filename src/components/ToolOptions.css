@@ -1,0 +1,142 @@
+/* The arming row — one line under the tool strip, same panel, same hairline
+   vocabulary. It only ever appears with the strip open and a drawing on the
+   stage, so it never takes height from a surface the tools do not apply to. */
+
+.tooloptions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 8px;
+  background: var(--panel);
+  border-top: 1px solid var(--hairline);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+.tooloptions::-webkit-scrollbar {
+  height: 0;
+}
+
+.studio .topt-level {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  font-size: 11.5px;
+}
+.studio .topt-level:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.topt-level .lv-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.topt-sep {
+  width: 1px;
+  height: 15px;
+  background: var(--border);
+  flex: none;
+}
+
+.topt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+.topt-l {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.topt-u {
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.studio .topt-in {
+  width: 62px;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 11.5px;
+  text-align: right;
+}
+.studio .topt-in.wide {
+  width: 88px;
+  text-align: left;
+}
+.studio .topt-in:hover:not(:disabled) {
+  border-color: var(--text-faint);
+}
+.studio .topt-in:focus {
+  border-color: var(--accent);
+}
+/* A field a catalogue item owns (§8.5) shows the item's number and refuses the
+   caret — an editable box the tool is going to ignore would be a lie. */
+.studio .topt-in:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.topt-cat {
+  gap: 4px;
+}
+.studio .topt-pick {
+  height: 22px;
+  max-width: 170px;
+  padding: 0 8px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.studio .topt-pick:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.studio .topt-pick.armed {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 600;
+}
+.studio .topt-clear {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+}
+.studio .topt-clear:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.topt-tail {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  flex: none;
+}

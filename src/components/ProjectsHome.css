@@ -1,0 +1,285 @@
+/* R1 — the Projects home: the landing surface when no project is open. */
+
+.projects-home {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  overflow: auto;
+}
+
+.ph-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  flex: none;
+}
+
+.ph-logo {
+  display: inline-flex;
+  color: var(--accent);
+}
+
+.ph-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ph-bar .spacer { flex: 1; }
+
+.ph-body {
+  flex: 1;
+  padding: 30px 24px 48px;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.ph-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ph-head h1 {
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.ph-head .sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.ph-head .spacer { flex: 1; }
+
+.ph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.ph-card {
+  position: relative;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 15px 17px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.ph-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 14px rgba(24, 36, 56, 0.09);
+  transform: translateY(-1px);
+}
+
+.ph-card:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.ph-card.archived {
+  opacity: 0.6;
+}
+
+.ph-card .name {
+  font-size: 14px;
+  font-weight: 650;
+  /* The dots menu lives top-right; a long name must not run under it. */
+  padding-right: 24px;
+}
+
+.ph-card .client {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.ph-card .stats {
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ph-card .stats .warned {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.ph-card .opened {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--row-border);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.ph-card .card-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.ph-empty {
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 64px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.ph-empty .vt {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ph-empty .vs {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.55;
+  max-width: 420px;
+}
+
+.ph-empty .btn { margin-top: 10px; }
+
+/* --- new-project form ------------------------------------------------- */
+
+/* The form is a centred dialog, not a card wedged above the grid: it is a
+   modal moment — nothing else on this screen is actionable while it is up —
+   and centring is what says so. */
+.ph-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  padding: 24px;
+  overflow: auto;
+  background: var(--overlay);
+  animation: ph-fade 0.12s ease-out;
+}
+
+.ph-new {
+  /* auto margins, not align-items — centring this way still lets a card
+     taller than the viewport scroll instead of losing its top edge. */
+  margin: auto;
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+  padding: 22px 24px 20px;
+  box-shadow: var(--shadow);
+  animation: ph-rise 0.14s ease-out;
+}
+
+@keyframes ph-fade {
+  from { opacity: 0; }
+}
+
+@keyframes ph-rise {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ph-modal,
+  .ph-new { animation: none; }
+  .ph-card { transition: none; }
+}
+
+.ph-new h2 {
+  font-size: 15px;
+  font-weight: 650;
+  margin: 0 0 4px;
+}
+
+.ph-new .ph-new-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin: 0 0 6px;
+}
+
+.ph-new label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin: 14px 0 5px;
+}
+
+.ph-new input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 34px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.ph-new input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.ph-new .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--row-border);
+}
+
+.ph-new .row .btn {
+  min-height: 34px;
+}
+
+.ph-new .row .btn.primary {
+  flex: 1;
+}
+
+/* A backing-store failure, said out loud — never a silently empty grid. */
+.ph-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .ph-body { padding: 20px 16px 40px; }
+  .ph-head { flex-wrap: wrap; }
+  .ph-modal { padding: 16px; }
+  .ph-new { padding: 20px 18px 18px; }
+}

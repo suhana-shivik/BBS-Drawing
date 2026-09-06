@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>DwgConvert</AssemblyName>
+    <RootNamespace>BimcadStudio.DwgConvert</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Pinned exactly, not floated.
+
+      3.6.51 (2026-07-29) is the last release of the mature 3.6 line and the
+      version whose source (tag v3.6.51) every API call in Program.cs was read
+      against. 3.7.1 exists but was published 2026-08-18 with almost no uptake,
+      and ACadSharp's IO surface has moved between minor versions before
+      (3.6.29 was deprecated for critical bugs), so a float would be a silent
+      breakage waiting to happen. To move up: bump this number, re-read
+      src/ACadSharp/IO/DwgReader.cs and DxfWriter.cs at the matching tag, and
+      re-run the round-trip check in README.md.
+    -->
+    <PackageReference Include="ACadSharp" Version="3.6.51" />
+
+    <!--
+      Only needed for pre-2007 (< AC1021) drawings: ACadSharp writes those in
+      the drawing's ANSI code page rather than UTF-8, and we transcode the
+      result so the browser always receives UTF-8. Referenced explicitly rather
+      than relying on the provider being in the shared framework.
+    -->
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="9.0.6" />
+  </ItemGroup>
+
+</Project>

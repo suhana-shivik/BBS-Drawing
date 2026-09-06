@@ -1,0 +1,36 @@
+/* CAD underlay — a transparent canvas layer that sits inside the same
+   positioned pane as the 2D editor canvas and shares its view transform.
+   It is drawing, not chrome: pointer events belong to the editor above it,
+   picking goes through hitTestDisplayList. */
+.cad-underlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cad-underlay-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* the underlay must not blur the drawing when the canvas backing store and
+     the CSS box disagree by a rounded pixel */
+  image-rendering: auto;
+}
+
+/* paper-space view: the display list was resolved against a light
+   background, so the layer supplies one instead of showing the dark pane */
+.cad-underlay--paper {
+  background: #ffffff;
+}
+
+/* opt-in for hosts that want the underlay itself to take the pointer
+   (a standalone CAD viewer rather than an underlay beneath the plan) */
+.cad-underlay--interactive {
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}

@@ -1,0 +1,31 @@
+/* 2D plan editor canvas — fills its .view-pane (position: relative). */
+.editor2d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--bg-canvas);
+  touch-action: none;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Floating precision-coordinate readout, positioned by the controller
+   next to the cursor while a typed length/coordinate is being entered. */
+.editor2d-precision {
+  position: absolute;
+  z-index: 5;
+  display: none;
+  pointer-events: none;
+  /* canvas tokens, not UI panel tokens: this box floats on the sheet, which is
+     #101216 under both themes, so it must not turn pale with the light theme */
+  background: var(--canvas-floating);
+  border: 1px solid var(--accent);
+  color: var(--canvas-text);
+  font: 600 12px/1.4 'Segoe UI', system-ui, sans-serif;
+  padding: 3px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}

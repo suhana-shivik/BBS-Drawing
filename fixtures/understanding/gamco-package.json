@@ -1,0 +1,458 @@
+{
+  "documentId": "cad_jjtc_pntgzw",
+  "sourceDrawing": "GAMCO - BOUNDARY WALL DETAILS - LEVEL DIFFERENCE 900MM - 07.07.2026.dxf",
+  "sourceDrawingHash": "doc:0e73102c05c2edbb8aa85f1d44ba512565db70a694e12934ba32047bbd56aa0b",
+  "sheetExtents": {
+    "xMin": -7627868,
+    "yMin": -6299827.78064411,
+    "xMax": 10287859.8700578,
+    "yMax": 5242156.5
+  },
+  "summary": "A stand-in decomposition of GAMCO - BOUNDARY WALL DETAILS - LEVEL DIFFERENCE 900MM - 07.07.2026.dxf into 12 regions.",
+  "coverage": {
+    "measurableEntities": 1335,
+    "coveredEntities": 1326,
+    "uncoveredEntities": 9,
+    "gaps": [
+      {
+        "layer": "ASHADE",
+        "count": 9,
+        "sampleHandles": [
+          "5939",
+          "593A",
+          "593B",
+          "593C",
+          "593D",
+          "593E"
+        ],
+        "sampleText": [],
+        "bounds": {
+          "xMin": -7627868,
+          "yMin": 5242156.5,
+          "xMax": -7627868,
+          "yMax": 5242156.5
+        }
+      }
+    ]
+  },
+  "unresolved": [
+    "9 of 1335 entities (0.7%) are in no section \u2014 ASHADE (9)"
+  ],
+  "sections": [
+    {
+      "sectionId": "REGION-01",
+      "label": "S.P.A.CONSULTANTS",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10260677.003273206,
+        "yMin": -6295429.264023246,
+        "xMax": 10283654.451889008,
+        "yMax": -6277946.179684798
+      },
+      "entityCount": 424,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 8
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 16
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 18
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 8
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-02",
+      "label": "BOUNDARY WALL DETAILS",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10260677.003273206,
+        "yMin": -6296255.590202331,
+        "xMax": 10283654.451889008,
+        "yMax": -6270233.802013344
+      },
+      "entityCount": 647,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 11
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 16
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 21
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 10
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-03",
+      "label": "EXISTING SITE LEVEL &",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10263464.657403447,
+        "yMin": -6296154.963891657,
+        "xMax": 10283355.774660768,
+        "yMax": -6271172.980912968
+      },
+      "entityCount": 505,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 8
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 12
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 17
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-04",
+      "label": "DIFFERENCE - 900MM",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10263464.657403447,
+        "yMin": -6296047.551922193,
+        "xMax": 10283355.774660768,
+        "yMax": -6272175.492627962
+      },
+      "entityCount": 465,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 8
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 12
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 17
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-05",
+      "label": "PROJECT FGL",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10263464.657403447,
+        "yMin": -6296115.628079771,
+        "xMax": 10283355.774660768,
+        "yMax": -6271540.115157234
+      },
+      "entityCount": 500,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 8
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 12
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 17
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 6
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-06",
+      "label": "FOOTING LAYOUT",
+      "kind": "layout",
+      "bounds": {
+        "xMin": 10247829.052562928,
+        "yMin": -6294455.8292018,
+        "xMax": 10274816.849629572,
+        "yMax": -6280948.6725096
+      },
+      "entityCount": 487,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 14
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 28
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 19
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-07",
+      "label": "TIE BEAM LAYOUT",
+      "kind": "layout",
+      "bounds": {
+        "xMin": 10247818.860590473,
+        "yMin": -6294769.956277787,
+        "xMax": 10274911.974705828,
+        "yMax": -6278016.819800383
+      },
+      "entityCount": 632,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 14
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 28
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 32
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-08",
+      "label": "PRECAST PANEL LAYOUT",
+      "kind": "layout",
+      "bounds": {
+        "xMin": 10246989.714310076,
+        "yMin": -6295539.749581479,
+        "xMax": 10276043.844409525,
+        "yMax": -6265876.926002041
+      },
+      "entityCount": 1265,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 20
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 28
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 52
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 16
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-09",
+      "label": "TOP OF COLUMN AND RCC WALL LAYOUT AT",
+      "kind": "layout",
+      "bounds": {
+        "xMin": 10247818.860590473,
+        "yMin": -6295563.473573006,
+        "xMax": 10274911.974705828,
+        "yMax": -6270610.658378345
+      },
+      "entityCount": 1030,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 20
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 28
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 38
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-10",
+      "label": "+300 LVL. FROM F.G.L",
+      "kind": "detail",
+      "bounds": {
+        "xMin": 10247818.860590473,
+        "yMin": -6295551.415166335,
+        "xMax": 10274911.974705828,
+        "yMax": -6270723.203507265
+      },
+      "entityCount": 1028,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 20
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 28
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 38
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 14
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-11",
+      "label": "SECTION AT 1-1",
+      "kind": "section",
+      "bounds": {
+        "xMin": 10245749.615490468,
+        "yMin": -6289760.6766853025,
+        "xMax": 10263507.927110732,
+        "yMax": -6264304.5854958575
+      },
+      "entityCount": 771,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 9
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 16
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 39
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 9
+        }
+      ]
+    },
+    {
+      "sectionId": "REGION-12",
+      "label": "SECTION AT 2-2",
+      "kind": "section",
+      "bounds": {
+        "xMin": 10245191.162607292,
+        "yMin": -6289786.511962329,
+        "xMax": 10270430.013662007,
+        "yMax": -6264063.456243611
+      },
+      "entityCount": 1032,
+      "confidence": 0.5,
+      "limitations": [
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"AR-CONC\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 11
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI37\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 24
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"ANSI31\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 46
+        },
+        {
+          "code": "unclippable-entity",
+          "message": "HATCH \"SOLID\" written as boundary polylines \u2014 fill not reproduced",
+          "count": 15
+        }
+      ]
+    }
+  ]
+}

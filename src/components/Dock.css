@@ -1,0 +1,1535 @@
+/* The detail dock (right column): Details · Ask · Library · Specification ·
+   Log, over one scrolling body and a 24px status foot.
+
+   Three rules the whole file obeys:
+     * ONE SCROLLER. `.dock-body` scrolls; every panel inside it is content,
+       never its own scroll container — nested scrollbars in a 400px column
+       are how a reader loses their place.
+     * TABS DO NOT MOVE. The tab strip and the foot are fixed rows of a grid,
+       so switching tabs never shifts the two things that orient you.
+     * COLOUR CARRIES MEANING, NOT DECORATION. ok / warn / info exist because
+       a schedule can be grounded, blocked or merely indexed; nothing else in
+       here is tinted. */
+
+.dock {
+  display: grid;
+  grid-template-rows: 34px minmax(0, 1fr) 24px;
+  position: relative;
+  min-width: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+}
+
+/* --- tab strip ------------------------------------------------------------ */
+
+.dock-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 6px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.dock-tabs::-webkit-scrollbar {
+  height: 0;
+}
+
+.studio .dtab {
+  position: relative;
+  flex: none;
+  padding: 0 9px;
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.studio .dtab:hover {
+  color: var(--text);
+}
+.studio .dtab[aria-selected='true'] {
+  color: var(--accent);
+  font-weight: 650;
+}
+.dtab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+}
+
+.studio .dock-close {
+  margin-left: auto;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+}
+.studio .dock-close:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+
+/* --- body ----------------------------------------------------------------- */
+
+.dock-body {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.dock-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Ask owns the full height so its composer can sit at the bottom. */
+.dock-panel.ask-dock {
+  height: 100%;
+}
+
+.dock-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* A state dot — the only thing in the dock that reports with colour alone,
+   and it always has a word beside it. */
+.state {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-faint);
+  display: inline-block;
+}
+.state.ok {
+  background: var(--ok);
+}
+.state.idle {
+  background: var(--text-faint);
+  opacity: 0.55;
+}
+
+/* --- the empty state ------------------------------------------------------ */
+
+.dock-void {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 26px 16px;
+  color: var(--text-faint);
+}
+.dock-void .vt,
+.ask-welcome .vt {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text);
+}
+.dock-void .vs,
+.ask-welcome .vs {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
+/* --- document head (Details, BBS, Run log) -------------------------------- */
+
+.doc-head {
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+.doc-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--text);
+  word-break: break-word;
+}
+.doc-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+}
+.chip-s {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--panel-2);
+  color: var(--text-dim);
+  border: 1px solid var(--hairline);
+}
+.chip-s.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  border-color: transparent;
+}
+.chip-s.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: transparent;
+}
+.chip-s.info {
+  background: var(--info-bg);
+  color: var(--accent);
+  border-color: transparent;
+}
+
+/* A chip that ACTS — "show current", and the two download buttons. It has to
+   read as pressable next to the chips that only report, so it takes the accent
+   on hover rather than staying the same grey as the numbers beside it. */
+.studio .chip-s.link,
+.studio .chip-s.dl {
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.studio .chip-s.link:hover,
+.studio .chip-s.dl:hover {
+  background: var(--accent-dim);
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  color: var(--accent);
+}
+.studio .chip-s.link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.chip-s.dl svg {
+  opacity: 0.8;
+}
+.dl-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* --- file properties pane (Details tab while browsing Files, §4.3) --------
+   FileProperties.tsx renders prop-ident/prop-mark/prop-chips/prop-contents
+   etc. with no rules behind them until now — the icon fell out of the flex
+   row doc-head sits in (a bare <span> beside a <div> stacks, it does not sit
+   beside it) and the contents list rendered as a plain UA bullet <ul>. */
+.prop-ident {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 14px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.prop-ident .doc-head {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border-bottom: none;
+}
+.prop-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  margin-top: 1px;
+  border-radius: var(--r);
+  color: var(--text-faint);
+}
+.prop-mark.file {
+  background: var(--panel-2);
+}
+/* The manila the same folder wears in the grid tile and the list row (§4.3) —
+   a plain outline here would be the third colour one folder wears on screen. */
+.prop-mark.folder {
+  color: #d9a13c;
+  background: rgba(217, 161, 60, 0.14);
+}
+.prop-mark.multi {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+.prop-mark.void {
+  background: var(--panel-2);
+}
+.prop-mark .ext {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--danger);
+  color: #fff;
+}
+.prop-mark .ext.csv { background: var(--ok); }
+.prop-mark .ext.xlsx { background: #1d6f42; }
+.prop-mark .ext.dxf { background: var(--accent); }
+
+.prop-preview {
+  padding: 14px 14px 0;
+}
+.prop-preview.file {
+  display: grid;
+}
+.prop-sheet {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--r);
+  overflow: hidden;
+  background: var(--canvas);
+  border: 1px solid var(--border);
+}
+.prop-sheet svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.prop-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* The list a folder's own contents show inside Contents — a mini file list,
+   not a document's bullet list, so it reads as navigation, not prose. */
+.prop-contents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.studio .prop-contents button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 4px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  text-align: left;
+}
+.studio .prop-contents button:hover {
+  background: var(--row-hover);
+}
+.prop-contents .row-ic {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--text-faint);
+}
+.prop-contents .row-ic.folder {
+  color: #d9a13c;
+}
+.prop-contents .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prop-contents .go {
+  flex: none;
+  color: var(--text-faint);
+}
+.prop-more {
+  margin: 6px 0 0;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.prop-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.studio .prop-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+}
+.studio .prop-open:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+/* The second way to take the same thing, and the way to open it — present,
+   but never competing with the deliverable button beside it. */
+.studio .prop-open.ghost {
+  flex: none;
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--text-dim);
+}
+.studio .prop-open.ghost.wide {
+  flex: 1;
+}
+.studio .prop-open.ghost:hover {
+  background: var(--panel-3);
+  border-color: var(--border-light);
+  color: var(--text);
+}
+.prop-open .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 3px 1px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--hairline);
+  background: var(--panel-2);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.studio .group-switch button {
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.studio .group-switch button:hover {
+  color: var(--text);
+  background: var(--panel-3);
+}
+.studio .group-switch button.on {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* --- sections and key/value blocks ---------------------------------------- */
+
+.section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-family: var(--ff-cond);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+/* the hairline that runs out from a section heading to the panel edge */
+.rule {
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+/* the count a heading carries — "Contents 4" */
+.section h3 .tally {
+  padding: 1px 6px;
+  border-radius: 20px;
+  background: var(--panel-2);
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--text-dim);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: minmax(84px, auto) 1fr;
+  gap: 5px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.kv dt {
+  color: var(--text-faint);
+}
+.kv dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.extract-line,
+.source-note {
+  margin-top: 9px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.source-note {
+  padding: 7px 9px;
+  border-left: 2px solid var(--border);
+  background: var(--panel-2);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.card {
+  padding: 11px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+
+/* --- the steel summary ---------------------------------------------------- */
+
+.stat-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.stat-big {
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.stat-unit {
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+/* A blocked schedule weighs nothing YET — the header says so in words rather
+   than printing a tonnage of zero (§6.4). */
+.steel .stat-row .stat-unit:only-child {
+  font-size: 12px;
+  color: var(--warn);
+}
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 11px;
+}
+.bar-row {
+  display: grid;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.bar-row .dia {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.bar-row .track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-3);
+  overflow: hidden;
+}
+.bar-row .fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.bar-row .val {
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- buttons -------------------------------------------------------------- */
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 11px;
+}
+.studio .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.studio .btn:hover:not(:disabled) {
+  background: var(--panel-3);
+  border-color: var(--border-light);
+  color: var(--text);
+}
+.studio .btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.studio .btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #fff;
+}
+.studio .btn:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+/* --- the run panel above the schedule ------------------------------------- */
+
+.bbs-run {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.bbs-run .btn-row {
+  margin-top: 0;
+}
+.run-stats {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* Three kinds of sentence, three weights. `run-note` informs, `run-restale`
+   asks for a decision that costs money, `run-blocked` and `run-error` say why
+   nothing will happen — none of them is decoration. */
+.run-note,
+.run-restale,
+.run-blocked,
+.run-error {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+.run-note {
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+.run-restale {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.run-blocked {
+  background: var(--panel-2);
+  color: var(--text-dim);
+  border-left: 2px solid var(--border-light);
+}
+.run-error {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+
+/* §LIFECYCLE — STALE / REBUILDING / VALIDATED status banners */
+.bbs-lifecycle-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: 11.5px;
+  line-height: 1.55;
+  border-left: 3px solid transparent;
+}
+.bbs-lifecycle-chip {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.bbs-lifecycle-stale {
+  background: var(--warn-bg, #fff8e1);
+  color: var(--warn, #7a5700);
+  border-left-color: var(--warn, #f59e0b);
+}
+.bbs-lifecycle-stale .bbs-lifecycle-chip {
+  background: var(--warn, #f59e0b);
+  color: #fff;
+}
+.bbs-lifecycle-rebuilding {
+  background: var(--info-bg, #e8f4fd);
+  color: var(--info-text, #1a5276);
+  border-left-color: #3b82f6;
+}
+.bbs-lifecycle-rebuilding .bbs-lifecycle-chip {
+  background: #3b82f6;
+  color: #fff;
+}
+.bbs-lifecycle-validated {
+  background: var(--success-bg, #e8f5e9);
+  color: var(--success-text, #1b5e20);
+  border-left-color: #22c55e;
+}
+.bbs-lifecycle-validated .bbs-lifecycle-chip {
+  background: #22c55e;
+  color: #fff;
+}
+
+.bbs-interview {
+  margin-top: 10px;
+}
+.bbs-question {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 9px;
+  padding: 10px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+.bbs-question label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.bbs-question small {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.bbs-question .btn-row {
+  margin-top: 4px;
+}
+.bbs-question-answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.studio .bbs-question-answer input,
+.studio .ask-question-answer input {
+  flex: 1;
+  min-width: 120px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  font-size: 12px;
+  color: var(--text);
+}
+.studio .bbs-question-answer input:focus,
+.studio .ask-question-answer input:focus {
+  border-color: var(--accent);
+}
+
+/* --- the run log ---------------------------------------------------------- */
+
+.run-log {
+  display: flex;
+  flex-direction: column;
+}
+.run-lines {
+  margin: 0;
+  padding: 10px 14px 16px 30px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.run-lines li {
+  padding-left: 4px;
+  word-break: break-word;
+}
+.run-lines li::marker {
+  color: var(--text-faint);
+}
+
+/* --- sections: the read, its progress, and what it found (R3 §3.1/§3.4) ----
+   This block arrives in stages and SHOWS every one of them: the loader while
+   the model still has the sheet, the tail of progress lines as they land,
+   then coverage, then the section list. None of it had a rule behind it, so
+   the spinner was an empty span and a section row printed as one run-on
+   string ("REGION-01FOUNDATION LAYOUT PLAN[layout]1,278 entities"). */
+.read-loader {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: var(--r);
+  background: var(--info-bg);
+}
+.spinner {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  border-top-color: var(--accent);
+  animation: dock-spin 0.7s linear infinite;
+}
+@keyframes dock-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.rl-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rl-text b {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text);
+}
+.rl-sub {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.split-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+/* The two states the dot could reach but could not show. */
+.state.warn {
+  background: var(--warn);
+}
+.state.busy {
+  background: var(--accent);
+  animation: dock-pulse 1.1s ease-in-out infinite;
+}
+@keyframes dock-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  .state.busy {
+    animation: none;
+  }
+}
+.split-cost {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+/* A residual layer nothing accounted for is a warning, not another grey line. */
+.kv .warned {
+  color: var(--warn);
+  font-weight: 550;
+}
+
+.section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 9px;
+}
+.studio .section-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+}
+.studio .section-row:hover {
+  background: var(--panel-3);
+  border-color: var(--border-light);
+}
+.section-row .sid {
+  flex: none;
+  font-family: var(--ff-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.section-row .slabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 550;
+}
+.section-row .skind {
+  flex: none;
+  font-family: var(--ff-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.section-row .scount {
+  flex: none;
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.hint-dim {
+  color: var(--text-faint);
+}
+.limitations {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 9px;
+}
+.limitation {
+  padding: 6px 9px;
+  border-left: 2px solid var(--warn);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--warn-bg);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--warn);
+}
+.limitation .code {
+  font-family: var(--ff-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* --- Ask ------------------------------------------------------------------ */
+
+.ask-panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+}
+.ask-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+}
+.ask-welcome {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.ask-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 5px;
+}
+.studio .ask-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.studio .ask-chip:hover {
+  background: var(--panel-3);
+  border-color: var(--border-light);
+  color: var(--text);
+}
+
+/* A turn: who said it, then what they said. The label is small and constant
+   so the eye reads the column of text, not the column of names. */
+.ask-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ask-msg .who,
+.ask-questions .who {
+  font-family: var(--ff-cond);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.ask-msg .text {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ask-msg.you .text {
+  padding: 8px 10px;
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+
+/* The BBS artifact card in the thread — a REFERENCE that was resolved, never
+   a table the message carried (§7.2). */
+.ask-artifact {
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+.ask-artifact-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ask-artifact-head strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+.artifact-kicker {
+  display: block;
+  font-family: var(--ff-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.artifact-status {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: lowercase;
+  background: var(--panel-3);
+  color: var(--text-dim);
+}
+.artifact-status.complete {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+.artifact-status.partial {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.artifact-status.blocked {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
+.artifact-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 7px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+/* Where the result went, and the way to take it — on the card, because that
+   is where a person is looking when the run finishes. */
+.artifact-filed {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* A run in flight: the loader, its clock, and the engine's own lines. */
+.ask-run {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ask-run .run-lines {
+  padding: 4px 0 0 26px;
+}
+
+/* Questions the engine could not answer from the drawing. They are asked in
+   the thread because that is where the answer belongs (§7). */
+.ask-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ask-question {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 11px;
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r);
+  background: var(--panel-2);
+  font-size: 12px;
+  color: var(--text);
+}
+.question-why {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+.ask-question-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 3px;
+}
+.ask-question-answer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+.studio .ask-skip {
+  align-self: flex-start;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.studio .ask-skip:hover {
+  color: var(--text);
+}
+.ask-submit-all {
+  align-self: flex-start;
+}
+
+/* --- attachments ---------------------------------------------------------- */
+
+.pending-attachments,
+.sent-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+.pending-attachment,
+.sent-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  background: var(--panel-2);
+  font-size: 11px;
+  color: var(--text-dim);
+  overflow: hidden;
+}
+.sent-attachment {
+  padding-right: 8px;
+}
+.pending-attachment span,
+.sent-attachment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio .pending-attachment button {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  color: var(--text-faint);
+}
+.studio .pending-attachment button:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.attachment-error {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--danger-text);
+}
+/* The real <input type="file"> is never the control you see. */
+.attachment-picker {
+  display: none;
+}
+
+/* --- the composer --------------------------------------------------------- */
+
+.ask-composer {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--hairline);
+  background: var(--panel);
+}
+.ask-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--panel-2);
+}
+.ask-input:focus-within {
+  border-color: var(--accent);
+}
+.studio .ask-input input[type='text'] {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  padding: 0 4px;
+  font-size: 12.5px;
+  color: var(--text);
+  background: none;
+}
+.studio .ask-input input[type='text']::placeholder {
+  color: var(--text-faint);
+}
+.studio .attach-button,
+.studio .stop-response {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+}
+.studio .attach-button:hover:not(:disabled),
+.studio .stop-response:hover {
+  background: var(--panel-3);
+  color: var(--text);
+}
+.studio .attach-button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+.studio .ask-input .btn.primary {
+  width: 32px;
+  min-height: 28px;
+  padding: 0;
+  flex: none;
+}
+
+/* --- the unread parts of a drawing ----------------------------------------
+   A gap is not a section. It carries the warning colour the outlines on the
+   canvas carry, so the row and the box on the drawing read as one thing. */
+.gap-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Amber, matching the gap boxes on the canvas — the row and the outline on
+   the drawing have to read as one thing. `--warn` is the theme's own amber,
+   so it stays legible on the light panel the dock actually is, while the
+   canvas uses a brighter one against CAD black. */
+.gap-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.gap-row {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--warn);
+  border-radius: var(--r-sm);
+  background: var(--panel-2);
+}
+.gap-row:hover {
+  background: var(--panel-3);
+}
+.gap-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gap-line .gid {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warn);
+}
+.gap-line .gcount {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+/* Joined to a section, or on its own — the one verdict geometry can give. */
+.gap-line .gjoin {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.gap-line .gjoin.alone {
+  color: var(--warn);
+  font-weight: 600;
+}
+.gap-why {
+  margin-top: 2px;
+  font-family: var(--ff-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+  overflow-wrap: anywhere;
+}
+/* The schedule verdict. `required` is asserted from a bar the callout grammar
+   actually read; everything else says so out loud rather than going quiet. */
+.gap-bbs {
+  margin-top: 3px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  color: var(--text-faint);
+}
+.gap-bbs.required b {
+  color: var(--accent);
+}
+.gap-bbs.unknown b {
+  color: var(--warn);
+}
+
+/* --- picking one read area out of the drawing ------------------------------
+   The row is no longer a single button: choosing a section (which lights it on
+   the sheet and dims the rest) and opening it as its own sheet are different
+   acts, so they are different controls rather than one click that has to guess
+   which was meant. */
+.section-showing {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 0 2px 4px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.section-showing b {
+  font-family: var(--ff-mono);
+  color: var(--accent);
+}
+.studio .section-showing .btn-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.studio .section-row {
+  padding: 0;
+  overflow: hidden;
+}
+.studio .section-row.pinned {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-dim);
+}
+/* Tick several to compare them. It sits OUTSIDE the row button — a checkbox
+   nested in a button is invalid markup and the two clicks would fight — and
+   keeps the browser's own control rather than a painted stand-in, so the
+   keyboard, screen readers and the focus ring all work without being rebuilt.
+   The accent is the one the pinned row already uses. */
+/* The second pass's verdict on one unread part. The relationship line takes
+   the colour of what it is claiming: a geometric CONNECTED is the accent the
+   read sections already use, NEAR_CONNECTED is the same accent held back
+   because it rests on a reading as well, and INDEPENDENT keeps the amber the
+   gap was drawn in — it is still unaccounted for, just now described. */
+/* A resolved leftover keeps its card as history but stops looking like a
+   warning — its geometry is inside a region now, and the amber that says
+   "nobody has accounted for this" would be false. */
+.studio .gap-row.resolved {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: transparent;
+  opacity: 0.72;
+}
+.studio .gap-row.resolved .gid {
+  color: var(--text-faint);
+}
+.studio .gap-resolved {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+/* What a region absorbed, on the region's own row. */
+/* The validation verdict on a section row. PASS is deliberately quiet — the
+   reader is looking for what did NOT pass, and a row of green badges is a row
+   nobody reads. */
+.studio .section-check-line {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 2px 4px;
+}
+
+.studio .section-verdict {
+  flex: none;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.studio .section-verdict.pass {
+  color: var(--text-faint);
+  background: transparent;
+  border: 1px solid var(--hairline);
+}
+.studio .section-verdict.warning {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+}
+.studio .section-verdict.fail {
+  color: var(--bad, #f87171);
+  background: color-mix(in srgb, var(--bad, #f87171) 16%, transparent);
+}
+
+.studio .section-attached {
+  flex: 0 0 100%;
+  font-size: 10px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.studio .gap-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.studio .gjoin.link-connected {
+  color: var(--accent);
+  font-weight: 600;
+}
+.studio .gjoin.link-near-connected {
+  color: color-mix(in srgb, var(--accent) 70%, var(--text-faint));
+  font-weight: 600;
+}
+.studio .gjoin.link-independent {
+  color: var(--warn);
+  font-weight: 600;
+}
+.studio .gap-second {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.studio .gap-second b {
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+/* Not read, or read and failed, says so in the warning colour — a part nobody
+   read must never look like a part that was read and found to be nothing. */
+.studio .gap-second.unread b,
+.studio .gap-second.failed b {
+  color: var(--warn);
+}
+
+.studio .section-check {
+  flex: none;
+  align-self: center;
+  width: 14px;
+  height: 14px;
+  margin: 0 0 0 9px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.studio .section-pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  padding: 7px 9px;
+  font-size: 12px;
+  color: var(--text);
+  text-align: left;
+}
+.studio .section-check + .section-pick {
+  padding-left: 7px;
+}
+.studio .section-pick:hover {
+  background: var(--panel-3);
+}
+.studio .section-open {
+  flex: none;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  border-left: 1px solid var(--hairline);
+  color: var(--text-faint);
+}
+.studio .section-open:hover {
+  background: var(--panel-3);
+  color: var(--accent);
+}

@@ -1,0 +1,201 @@
+/* BIMCAD Studio — shared semantic theme tokens. Light is the product default. */
+:root {
+  --bg: #eef1f5;
+  /* Drawing/model viewports are always CAD-black, independent of UI theme. */
+  --bg-canvas: #101216;
+  --panel: #f8fafc;
+  --panel-2: #e7ecf2;
+  --border: #bcc7d4;
+  --border-light: #9eacbc;
+  --text: #0b1220;
+  --text-dim: #344154;
+  --text-faint: #526078;
+  --accent: #1f5fb8;
+  --accent-hover: #154b96;
+  --accent-dim: rgba(37, 99, 185, 0.12);
+  --danger: #c83d3d;
+  --warning: #9a6514;
+  --ok: #23824a;
+  --selection: #d97706;
+  --row-hover: #e3e9f0;
+  --row-selected: #d4e3f7;
+  --row-selected-border: #8eb4e6;
+  --row-border: rgba(23, 32, 51, 0.07);
+  --overlay: rgba(15, 23, 42, 0.34);
+  --floating: rgba(248, 250, 252, 0.94);
+  --canvas-text: #e6e7ea;
+  --canvas-text-dim: #a9adb7;
+  --grid-minor: rgba(255, 255, 255, 0.045);
+  --grid-major: rgba(255, 255, 255, 0.095);
+  /* Chrome drawn ON the sheet. The viewport is #101216 in BOTH themes, so
+     these do NOT flip with the UI theme — a label that borrowed the light
+     panel token painted --canvas-text on a near-white pill and vanished. */
+  --canvas-floating: rgba(16, 18, 22, 0.9);
+  --canvas-floating-border: rgba(230, 231, 234, 0.34);
+  --disabled-opacity: 0.58;
+  --success-bg: #e5f5eb;
+  --success-text: #17673a;
+  --warning-bg: #fff5d9;
+  --warning-text: #80530f;
+  --danger-bg: #fae9e8;
+  --danger-text: #9d3333;
+  --info-bg: #e5eefb;
+  --info-text: #345f94;
+  --radius: 6px;
+  --shadow: 0 8px 28px rgba(24, 36, 56, 0.14);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #17181c;
+  --bg-canvas: #101216;
+  --panel: #22242a;
+  --panel-2: #292b32;
+  --border: #34363e;
+  --border-light: #41434c;
+  --text: #e6e7ea;
+  --text-dim: #9a9da6;
+  --text-faint: #6b6e78;
+  --accent: #4f8cff;
+  --accent-hover: #6ba0ff;
+  --accent-dim: rgba(79, 140, 255, 0.18);
+  --danger: #e5534b;
+  --warning: #d9a03f;
+  --ok: #4fbf67;
+  --selection: #ffb648;
+  --row-hover: #20242b;
+  --row-selected: #253a59;
+  --row-selected-border: #3c6494;
+  --row-border: rgba(255, 255, 255, 0.045);
+  --overlay: rgba(8, 9, 12, 0.66);
+  --floating: rgba(34, 36, 42, 0.88);
+  --grid-minor: rgba(255, 255, 255, 0.045);
+  --grid-major: rgba(255, 255, 255, 0.095);
+  --canvas-text: #e6e7ea;
+  --canvas-text-dim: #9a9da6;
+  /* identical to light on purpose — see the note there */
+  --canvas-floating: rgba(16, 18, 22, 0.9);
+  --canvas-floating-border: rgba(230, 231, 234, 0.34);
+  --disabled-opacity: 0.45;
+  --success-bg: #1c3a2d;
+  --success-text: #8edcb3;
+  --warning-bg: #45391e;
+  --warning-text: #e4c37a;
+  --danger-bg: #3b3030;
+  --danger-text: #e6a6a6;
+  --info-bg: #24354c;
+  --info-text: #cfe3ff;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 5px 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+button:hover {
+  background: var(--border);
+  border-color: var(--border-light);
+}
+
+button:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: default;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.theme-toggle {
+  flex: 0 0 auto;
+}
+
+button.primary:hover {
+  background: var(--accent-hover);
+}
+
+button.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+input::placeholder,
+textarea::placeholder { color: var(--text-faint); opacity: 1; }
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 5px;
+  border: 2px solid var(--panel);
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+}
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  padding: 8px 10px 4px;
+}
