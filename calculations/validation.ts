@@ -68,12 +68,31 @@ export interface ScheduleValidation {
     unvalidated: number;
     /** distinct assumptions across the schedule */
     assumedInputs: number;
-    /** rows carrying at least one warning */
+    /** rows on which a validation check did not pass */
     warnings: number;
+    /** rows where two readings or derivations disagree and nobody has settled it */
+    mismatches: number;
+    /** distinct required facts still missing */
+    missingFacts: number;
   };
   rows: RowValidation[];
   /** the distinct assumptions, so the schedule can list them once */
   assumptions: string[];
+  /** the headline a filed artifact carries — INCOMPLETE until every gate passes */
+  label: 'FINAL' | 'INCOMPLETE';
+  /**
+   * EVERY GATE, BY NAME. Calculated is not final: a schedule may compute
+   * every row and still fail on a mismatch nobody settled, a drawing that
+   * moved on, or an input with no provenance. The list is the contract, so a
+   * reader sees which condition held it back rather than a bare "incomplete".
+   */
+  gates: FinalGate[];
+}
+
+export interface FinalGate {
+  name: string;
+  ok: boolean;
+  detail?: string;
 }
 
 const ASSUMED_SOURCE = /^(ASSUMED|PROJECT_DEFAULT|DEFAULT)\b/i;
@@ -175,6 +194,14 @@ export interface ValidateScheduleOptions {
   driftRows?: readonly string[];
   /** questions still open against this schedule */
   openDependencies?: readonly string[];
+  /**
+   * A DISPUTE the schedule itself carries: a sanity check that says steel is
+   * missing, an independent verifier that rejects a count, a reading two
+   * sources disagree on. Every row can compute and the arithmetic still be
+   * built on something a person has to settle — so a dispute blocks FINAL
+   * until somebody says they have checked it.
+   */
+  disputes?: readonly string[];
 }
 
 /** Validate the schedule from its rows and the state around it. Pure. */
@@ -200,6 +227,61 @@ export function validateSchedule(rows: readonly BbsRow[], opts: ValidateSchedule
   if (opts.verificationOk === false) blockers.push('a verification gate failed');
   if (opts.driftRows?.length) blockers.push(`DRIFT — stored and recalculated values differ on: ${opts.driftRows.join(', ')}`);
   if (opts.openDependencies?.length) blockers.push(`open dependencies: ${opts.openDependencies.join(', ')}`);
+  for (const dispute of opts.disputes ?? []) blockers.push(`UNRESOLVED — ${dispute}`);
+
+  const mismatched = perRow.filter((r) => r.checks.some((c) => !c.ok && c.severity === 'rejecting'));
+  const missingFacts = [...new Set(perRow.flatMap((r) => r.unresolved))];
+  // A computed number a reader cannot trace is not an engineering answer.
+  const withoutProvenance = rows.filter(
+    (r) => typeof r.weightKg === 'number' && !(r.trace && r.trace.factsUsed.length > 0 && r.trace.sourceText),
+  );
+  if (withoutProvenance.length) {
+    blockers.push(
+      `${withoutProvenance.length} computed row(s) carry no provenance: ${withoutProvenance.map((r) => r.barMark).join(', ')}`,
+    );
+  }
+
+  const noneOr = (list: readonly string[]): string => (list.length ? list.join(', ') : 'none');
+  const openLengths = rows.filter((r) => !(typeof r.cuttingLengthMm === 'number' && r.cuttingLengthMm > 0));
+  const openGeometry = rows.filter((r) => r.trace?.failedStage === 'GEOMETRY_RESOLVED');
+  const gates: FinalGate[] = [
+    { name: 'required rows complete', ok: rows.length > 0 && calculated === rows.length, detail: `${calculated}/${rows.length} calculated` },
+    { name: 'blocked rows = 0', ok: unvalidated === 0, detail: `${unvalidated} blocked` },
+    { name: 'required missing facts = 0', ok: missingFacts.length === 0, detail: noneOr(missingFacts) },
+    { name: 'critical mismatches = 0', ok: mismatched.length === 0, detail: noneOr(mismatched.map((r) => r.barMark)) },
+    { name: 'unresolved geometry = 0', ok: openGeometry.length === 0, detail: noneOr(openGeometry.map((r) => r.barMark)) },
+    { name: 'unresolved cutting lengths = 0', ok: openLengths.length === 0, detail: noneOr(openLengths.map((r) => r.barMark)) },
+    { name: 'quantity validated', ok: rows.every((r) => typeof r.totalBars === 'number' && r.totalBars > 0) },
+    {
+      name: 'cutting length validated',
+      ok: perRow.every(
+        (r) =>
+          r.checks.find((c) => c.name === 'cutting length established')?.ok === true &&
+          r.checks.find((c) => c.name === 'second opinion within tolerance')?.ok !== false,
+      ),
+    },
+    { name: 'weight calculated', ok: rows.every((r) => typeof r.weightKg === 'number' && r.weightKg > 0) },
+    { name: 'steel summary reconciled', ok: opts.reconciliationOk !== false, detail: opts.reconciliationOk === false ? 'the summary differs from the sum of the rows' : undefined },
+    {
+      name: 'drawing revision/hash current',
+      ok: opts.drawingHashMatches !== false && !opts.stale,
+      detail:
+        opts.drawingHashMatches === false
+          ? 'the drawing changed since this was computed'
+          : opts.stale
+            ? 'a dependency changed since this was computed'
+            : undefined,
+    },
+    { name: 'provenance present for every input', ok: withoutProvenance.length === 0, detail: noneOr(withoutProvenance.map((r) => r.barMark)) },
+    { name: 'no assumed input', ok: assumptions.length === 0, detail: assumptions.length ? assumptions.join('; ') : 'none' },
+    { name: 'no open dependency', ok: !opts.openDependencies?.length, detail: noneOr(opts.openDependencies ?? []) },
+    { name: 'no drift from stored rows', ok: !opts.driftRows?.length, detail: noneOr(opts.driftRows ?? []) },
+    {
+      name: 'no unresolved dispute',
+      ok: !opts.disputes?.length,
+      detail: opts.disputes?.length ? `${opts.disputes.length} unresolved: ${opts.disputes[0].slice(0, 90)}…` : 'none',
+    },
+  ];
 
   const status: EngineeringValidation =
     rows.length === 0
@@ -212,9 +294,14 @@ export function validateSchedule(rows: readonly BbsRow[], opts: ValidateSchedule
             ? 'PARTIALLY_VALIDATED'
             : 'UNVALIDATED';
 
+  // FINAL is the conjunction of every gate. A schedule that computed all its
+  // rows but failed one of them is INCOMPLETE, and says which.
+  const final = blockers.length === 0 && gates.every((g) => g.ok);
   return {
     status,
-    final: blockers.length === 0,
+    final,
+    label: final ? 'FINAL' : 'INCOMPLETE',
+    gates,
     blockers,
     counts: {
       rows: rows.length,
@@ -227,6 +314,8 @@ export function validateSchedule(rows: readonly BbsRow[], opts: ValidateSchedule
       assumedInputs: assumptions.length,
       // a validation warning is a check that did not pass — informational notes are not counted
       warnings: perRow.filter((r) => r.checks.some((c) => !c.ok)).length,
+      mismatches: mismatched.length,
+      missingFacts: missingFacts.length,
     },
     rows: perRow,
     assumptions,

@@ -36,7 +36,18 @@ export type FactValue = number | string | boolean | null;
 export interface FactSource {
   drawingNumber: string;
   revision: string;
+  /**
+   * The ENGINEERING section this was read from — the whole detail, not the
+   * cluster of ink it happened to sit in.
+   */
   sectionId?: string;
+  /**
+   * Every visual region that section is drawn across. A detail drawn as four
+   * separated clusters lists four; a highlight, a crop or a targeted re-read
+   * still addresses the exact one it needs, while the fact belongs to the
+   * detail as a whole.
+   */
+  regionIds?: string[];
   /** id of the stored document the drawing was read from (multi-drawing projects). */
   documentId?: string;
   /** DXF entity handles behind the reading — the audit trail. */

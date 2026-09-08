@@ -29,6 +29,8 @@ export interface ArtifactRecord {
   mimeType: 'text/csv' | 'application/json';
   content: string;
   createdAt: number;
+  /** last write. Equal to createdAt until the artifact is edited in place. */
+  updatedAt: number;
 }
 
 interface ArtifactRow {
@@ -44,9 +46,11 @@ interface ArtifactRow {
   mime_type: string;
   content: string | null;
   created_at: string;
+  updated_at: string | null;
 }
 
-const COLUMNS = 'id,project_id,document_id,kind,file_name,drawing_name,drawing_number,revision,version,mime_type,content,created_at';
+const COLUMNS =
+  'id,project_id,document_id,kind,file_name,drawing_name,drawing_number,revision,version,mime_type,content,created_at,updated_at';
 
 function toRecord(row: ArtifactRow): ArtifactRecord {
   return {
@@ -62,6 +66,7 @@ function toRecord(row: ArtifactRow): ArtifactRecord {
     mimeType: (row.mime_type === 'text/csv' ? 'text/csv' : 'application/json') as ArtifactRecord['mimeType'],
     content: row.content ?? '',
     createdAt: Date.parse(row.created_at),
+    updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.parse(row.created_at),
   };
 }
 
@@ -114,6 +119,20 @@ export async function insertArtifact(artifact: ArtifactRecord): Promise<string> 
     'Filing the output',
   );
   return inserted.id;
+}
+
+/**
+ * Write new content over an artifact that already exists — a CORRECTION, not
+ * a new version. The row keeps its id, its version and its file name; only
+ * the content and `updated_at` move. What changed is recorded in the
+ * artifact's own history and in the calculation runs beside it.
+ */
+export async function updateArtifact(artifactId: string, content: string): Promise<void> {
+  const { error } = await supabase()
+    .from('project_artifacts')
+    .update({ content, updated_at: new Date().toISOString() })
+    .eq('id', artifactId);
+  if (error) throw new Error(describeDbError(error, 'updating the filed schedule'));
 }
 
 export async function deleteArtifact(id: string): Promise<void> {

@@ -400,6 +400,11 @@ export function defaultColumns(result: BbsChatResult): BbsExportColumn[] {
     { id: 'factIds', label: 'Fact IDs', numeric: false },
     { id: 'confidence', label: 'Confidence', numeric: true },
     { id: 'engineering', label: 'Validation', numeric: false },
+    // Left blank on export. A person completing a shape, a leg dimension or a
+    // design cutting length in Excel ticks it to say the figure came from the
+    // drawing — the same confirmation the in-app grid asks for, so neither
+    // route can quietly accept an invented geometry.
+    { id: 'confirmFromDrawing', label: 'Confirm from drawing', numeric: false },
   );
   return cols;
 }

@@ -195,7 +195,7 @@ export function FileProperties() {
       {/* Revision, state and trade, read at a glance instead of hunted for in
           the grid — they are the three things a register is asked about. */}
       {node.kind === 'file' ? (
-        <div className="prop-chips">
+        <div className="prop-chips" style={{marginTop:"10px"}}>
           {rev ? <span className={`chip-s${node.current ? ' info' : ''}`}>REV {rev}</span> : null}
           {version ? <span className="chip-s">{version}</span> : null}
           <span className={`chip-s ${STATE_TONE[node.state]}`}>{statusLabel(node)}</span>
@@ -272,9 +272,21 @@ export function FileProperties() {
               reader off to find a download somewhere else (§6.2). */}
           {node.artifactId ? (
             <div className="prop-actions">
+              {node.dockTab === 'bbs' ? (
+                <button
+                  type="button"
+                  className="prop-open"
+                  data-testid="expand-bbs-prop"
+                  title="Complete the rows that are still blocked, mismatched or assumed"
+                  onClick={() => store.openBbsEditor(node.artifactId!)}
+                >
+                  <Icon name="expand" size={13} />
+                  <span className="nm">Expand / Edit</span>
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="prop-open"
+                className="prop-open ghost"
                 onClick={() => download(node.artifactId!, 'xlsx')}
               >
                 <Icon name="download" size={13} />

@@ -27,6 +27,12 @@ export interface ProjectArtifact {
   mimeType: 'text/csv' | 'application/json';
   content: string;
   createdAt: number;
+  /**
+   * Last write. An artifact CORRECTED in place keeps its id, version and file
+   * name and moves this instead — editing a schedule to complete a blocked
+   * row is a correction to that schedule, not a new document.
+   */
+  updatedAt?: number;
 }
 
 const cache = new Map<string, ProjectArtifact[]>();
@@ -113,6 +119,13 @@ export async function loadProjectArtifacts(projectId: string): Promise<ProjectAr
   }
   // `getProjectArtifacts` is generic; without the argument T infers as unknown
   const saved = await repo.getProjectArtifacts<ProjectArtifact>(projectId).catch(() => null);
+  // A FAILED RELOAD MUST NOT EMPTY THE REGISTER. With the database
+  // unreachable AND no local mirror — offline in a fresh browser, or a
+  // storage backend that refused to open — `saved` is null. Overwriting the
+  // cache with [] there would blank the Outputs folder of a project whose
+  // schedules are sitting in memory, which looks exactly like having lost
+  // them. Nothing read means nothing NEW to show, not nothing to show.
+  if (saved === null && cache.has(projectId)) return cache.get(projectId)!;
   const artifacts = saved ?? [];
   cache.set(projectId, artifacts);
   emit();
@@ -171,7 +184,7 @@ export async function saveProjectArtifact(
   // local id is what made Delete look like it worked and then hand the output
   // straight back on the next load.
   const filed = isSupabaseConfigured()
-    ? { ...artifact, id: await remote.insertArtifact(artifact) }
+    ? { ...artifact, id: await remote.insertArtifact({ ...artifact, updatedAt: artifact.createdAt }) }
     : artifact;
   const next = [filed, ...current];
   await repo.putProjectArtifacts(input.projectId, next).catch(() => {
@@ -189,6 +202,38 @@ export async function saveProjectArtifact(
  * independent records, so removing the drawing without them would leave a
  * BBS workbook in Outputs with no drawing left to have produced it.
  */
+/**
+ * Correct a filed artifact IN PLACE.
+ *
+ * The identity that matters to a person is the file they opened:
+ * "pedestal-BBS-v1.xlsx" edited is still "pedestal-BBS-v1.xlsx". So the id,
+ * the version and the file name are kept, and only the content and the write
+ * time move. What CHANGED is not lost — the artifact's own `history` and the
+ * calculation runs beside it carry that — but the register still lists one
+ * schedule, not a version for every correction.
+ *
+ * `saveProjectArtifact` remains the deliberate "new version" path.
+ */
+export async function updateProjectArtifact(
+  projectId: string,
+  artifactId: string,
+  content: string,
+): Promise<ProjectArtifact | null> {
+  const current = cache.has(projectId) ? cache.get(projectId)! : await loadProjectArtifacts(projectId);
+  const existing = current.find((a) => a.id === artifactId);
+  if (!existing) return null;
+
+  const updated: ProjectArtifact = { ...existing, content, updatedAt: Date.now() };
+  const next = current.map((a) => (a.id === artifactId ? updated : a));
+  if (isSupabaseConfigured()) await remote.updateArtifact(artifactId, content);
+  await repo.putProjectArtifacts(projectId, next).catch(() => {
+    /* the mirror is best-effort once the database has it */
+  });
+  cache.set(projectId, next);
+  emit();
+  return updated;
+}
+
 export async function removeProjectArtifactsForDocument(
   projectId: string,
   documentId: string,

@@ -35,6 +35,7 @@
 // engine knows.
 // ============================================================
 import { SHAPES } from '../../domain/india/bbs';
+import type { ShapeCode } from '../../domain/india/bbs';
 
 /** the axes a member is measured on, and the only ones bars may be spaced along */
 export const AXES = ['L', 'W', 'H'] as const;
@@ -50,6 +51,24 @@ export const BAR_TYPES = [
   'MAIN', 'DISTRIBUTION', 'TOP', 'BOTTOM', 'CROSS',
   'STIRRUP', 'RING', 'TIE', 'EXTRA', 'CRANK', 'CURTAILMENT',
 ] as const;
+
+/**
+ * The bar types as a TYPE, so what `checkEnum` proves at the gate can be
+ * carried in the types afterwards rather than re-asserted with a cast at the
+ * far end. `as never` at a call site does not make a value valid; it only
+ * stops the compiler asking. The gate is what makes it valid — this lets the
+ * gate say so.
+ */
+export type BarTypeName = (typeof BAR_TYPES)[number];
+
+/** True for a value the gate would accept. Narrows, so no cast is needed. */
+export function isBarType(value: unknown): value is BarTypeName {
+  return typeof value === 'string' && (BAR_TYPES as readonly string[]).includes(value);
+}
+
+export function isShapeCode(value: unknown): value is ShapeCode {
+  return typeof value === 'string' && SHAPE_CODES.includes(value);
+}
 
 /**
  * Shape codes, taken from the engine's own table so the two cannot diverge.

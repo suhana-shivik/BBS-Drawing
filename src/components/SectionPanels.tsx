@@ -52,6 +52,25 @@ export function SectionsBlock({ sheet }: { sheet: StudioSheet }) {
   // Still orange, and no longer orange. `action` is what decides — a piece can
   // be read and still unresolved (too little content to stand as its own
   // area), and that one keeps its warning.
+  /**
+   * The read areas, under the detail each belongs to. An area the grouping
+   * did not place still appears — under no heading rather than not at all.
+   */
+  const groupedSections = React.useMemo(() => {
+    const rows = info?.sections ?? [];
+    const logical = info?.logicalSections ?? [];
+    if (!logical.length) return [{ id: 'all', section: null, rows }];
+    const byId = new Map(rows.map((r) => [r.sectionId, r]));
+    const placed = new Set<string>();
+    const groups = logical.map((section) => {
+      const own = section.regionIds.map((id) => byId.get(id)).filter((r): r is (typeof rows)[number] => Boolean(r));
+      for (const r of own) placed.add(r.sectionId);
+      return { id: section.id, section, rows: own };
+    });
+    const rest = rows.filter((r) => !placed.has(r.sectionId));
+    return rest.length ? [...groups, { id: 'ungrouped', section: null, rows: rest }] : groups;
+  }, [info?.sections, info?.logicalSections]);
+
   const gapsAll = info?.gaps ?? [];
   const unread = gapsAll.filter((g) => !g.second || g.second.action === 'unresolved');
   const resolved = gapsAll.filter((g) => g.second && g.second.action !== 'unresolved');
@@ -274,7 +293,37 @@ export function SectionsBlock({ sheet }: { sheet: StudioSheet }) {
               </button>
             </div>
           )}
-          {info.sections.map((s) => (
+          {/* THE DETAIL, THEN THE CLUSTERS IT IS DRAWN ACROSS.
+              A pedestal drawn as a plan, a section, its callouts and a note is
+              five read areas and ONE engineering detail. Listed flat, it read
+              as five unrelated things and the eye had to do the grouping; the
+              schedule cannot do that at all. So the detail is the heading and
+              the areas sit under it — and every area keeps its own id, because
+              a crop, a re-read and an entity selection still address one. */}
+          {groupedSections.map((group) => (
+            <div key={group.id} className="section-group" data-testid={`section-group-${group.id}`}>
+              {group.section && (
+                <div
+                  className={`section-group-head${group.section.relation === 'POSSIBLE_CONTINUATION' ? ' is-uncertain' : ''}`}
+                  title={group.section.basis.join('\n')}
+                >
+                  <span className="sg-name">
+                    {group.section.marks.length
+                      ? group.section.marks.join(', ')
+                      : group.section.title ?? group.section.id}
+                  </span>
+                  <span className="sg-meta">
+                    {group.section.title && group.section.marks.length ? `${group.section.title} · ` : ''}
+                    {group.rows.length} read area{group.rows.length === 1 ? '' : 's'}
+                  </span>
+                  {group.section.relation === 'POSSIBLE_CONTINUATION' && (
+                    <span className="sg-flag" title="One part joined on proximity alone — confirm before relying on it">
+                      check grouping
+                    </span>
+                  )}
+                </div>
+              )}
+              {group.rows.map((s) => (
             <div
               key={s.sectionId}
               className={`section-row${pinned?.includes(s.sectionId) ? ' pinned' : ''}`}
@@ -384,6 +433,8 @@ export function SectionsBlock({ sheet }: { sheet: StudioSheet }) {
               >
                 <Icon name="expand" size={12} />
               </button>
+            </div>
+              ))}
             </div>
           ))}
         </div>

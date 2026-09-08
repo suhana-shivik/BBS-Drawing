@@ -199,6 +199,14 @@ export interface BbsChatResult {
   /** engineering validation — calculated is not validated; FINAL is this saying so */
   validation?: import('../../../calculations/validation').ScheduleValidation;
   rowDrift?: import('../../../calculations/schedule').RowDrift[];
+  /** exactly what the pipeline was given — so this filed schedule can be rebuilt */
+  engineInputs?: import('./types').EngineInputs;
+  /** the drawing hash this was computed against, for the FINAL gate */
+  drawingHash?: string;
+  /** every edit this schedule has taken, in order — the audit trail of an in-place correction */
+  history?: import('../../../calculations/bbsEdit').BbsEditEvent[];
+  /** disputes a person has checked and signed off, so they no longer hold FINAL back */
+  acknowledged?: import('../../../calculations/bbsEdit').DisputeAcknowledgement[];
 }
 
 export interface BuildChatResultInput {
@@ -216,6 +224,8 @@ export interface BuildChatResultInput {
   gaps?: readonly BbsGapItem[];
   /** placements that read a drawn band as the whole job — see ExtentClaim */
   extentClaims?: readonly ExtentClaim[];
+  /** the hash of the drawing this was computed against */
+  drawingHash?: string;
   builtAt?: number;
   settings?: BbsSettings;
   settingSources?: Partial<Record<keyof BbsSettings, 'default' | 'sheet' | 'stated'>>;
@@ -331,7 +341,7 @@ export function buildChatResult(input: BuildChatResultInput): BbsChatResult {
       totalWeightKg: num(r.weightKg),
       coverMm: num(r.coverMm),
       coverSource: typeof r.coverSource === 'string' ? r.coverSource : undefined,
-      coverAssumption: row.coverAssumption ?? (r.coverAssumption as any),
+      coverAssumption: row.coverAssumption,
       working: workingLines(row, placement),
       evidenceIds: Array.isArray(r.evidenceIds) ? (r.evidenceIds as string[]) : [],
       status,
@@ -486,6 +496,8 @@ export function buildChatResult(input: BuildChatResultInput): BbsChatResult {
       : {}),
     ...(result.validation ? { validation: result.validation } : {}),
     ...(result.rowDrift ? { rowDrift: result.rowDrift } : {}),
+    ...(result.engineInputs ? { engineInputs: result.engineInputs } : {}),
+    ...(input.drawingHash ? { drawingHash: input.drawingHash } : {}),
   };
 }
 

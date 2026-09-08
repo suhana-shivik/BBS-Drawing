@@ -47,6 +47,20 @@ export interface AboutDrawingMemory {
   /** rendered from the exact state used for the build */
   note: string;
   sectionNotes: AboutDrawingSectionNote[];
+  /**
+   * THE ENGINEERING DETAILS, reported separately from the visual regions
+   * above. A detail drawn as four clusters is one entry here and four
+   * `sectionNotes` — so a reader of this memory sees what the sheet MEANS
+   * before what the splitter CUT, and the two are never confused.
+   */
+  logicalSections?: {
+    id: string;
+    title?: string;
+    kind: string;
+    marks: string[];
+    regionIds: string[];
+    relation: 'CONFIRMED' | 'POSSIBLE_CONTINUATION';
+  }[];
   unresolved: string[];
   escalations: { question: string; whyNeeded: string }[];
 }
@@ -125,6 +139,20 @@ export function buildAboutDrawingMemory(input: {
     conclusions,
     note: input.outcome?.note ?? readOnlyNote(input.pkg ?? null),
     sectionNotes: (input.pkg?.sections ?? []).map((s) => sectionNote(s, conclusions, input.doc)),
+    // The details, beside the clusters — reported separately so a reader of
+    // this memory never mistakes where the ink is for what the sheet means.
+    ...(input.outcome?.sections?.length
+      ? {
+          logicalSections: input.outcome.sections.map((sec) => ({
+            id: sec.id,
+            ...(sec.title ? { title: sec.title } : {}),
+            kind: sec.kind,
+            marks: [...sec.marks],
+            regionIds: [...sec.regionIds],
+            relation: sec.relation,
+          })),
+        }
+      : {}),
     unresolved: [...(input.outcome?.unresolved ?? [])],
     escalations: (input.outcome?.escalations ?? []).map((q) => ({ ...q })),
   };
@@ -221,15 +249,34 @@ export function aboutDrawingBriefing(memory: AboutDrawingMemory): string {
     spent += block.length;
   }
 
+  const logical = memory.logicalSections ?? [];
+  const logicalBlock = logical.length
+    ? [
+        '',
+        `ENGINEERING DETAILS this sheet carries (${logical.length}) — read a detail WHOLE.`,
+        'Each is drawn across the visual regions listed after it; a dimension in one and the',
+        'callout it completes in another are the same detail.',
+        ...logical.map(
+          (l) =>
+            `  ${l.id}${l.title ? ` "${l.title}"` : ''} [${l.kind}]` +
+            `${l.marks.length ? ` · ${l.marks.join(', ')}` : ''}` +
+            ` · regions ${l.regionIds.join(', ')}` +
+            `${l.relation === 'POSSIBLE_CONTINUATION' ? ' · POSSIBLE_CONTINUATION — confirm the grouping' : ''}`,
+        ),
+      ]
+    : [];
+
   return [
     '## ABOUT DRAWING — SAVED, CURRENT READING',
     memory.understanding ? `Previous understanding: ${memory.understanding}` : '',
     `${memory.conclusions.length} evidence-addressed conclusion(s) were revalidated against this drawing before this turn.`,
     memory.note,
+    ...logicalBlock,
     memory.sectionNotes.length
       ? [
           '',
-          `### WHAT EACH SECTION SAYS — ${memory.sectionNotes.length} section note(s), read from this drawing`,
+          `### WHAT EACH READ AREA SAYS — ${memory.sectionNotes.length} visual region(s) of this drawing`,
+          '(These are the CLUSTERS the sheet was cut into, not the details above.)',
           '',
           'Text is verbatim. Dimensions carry the measured value and, where the',
           'detailer wrote one, the WRITTEN value — which is what the yard cuts to.',

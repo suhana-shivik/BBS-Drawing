@@ -74,7 +74,10 @@ export interface DispositionCoverage {
  * correct-looking stages.
  */
 export function checkDispositionCoverage(
-  declared: readonly DeclaredMember[],
+  // Only the NAME is read here. Asking for a whole DeclaredMember would force
+  // every caller to carry a size, a dimension list and handles it does not
+  // have — which is what the `as never` at the verify.ts call site was hiding.
+  declared: readonly { name: string }[],
   dispositions: readonly DispositionEntry[],
   interpretedMarks: readonly string[],
 ): DispositionCoverage {

@@ -40,14 +40,16 @@
 // read it.
 // ============================================================
 import type { CadDocument } from '../types';
+import type { ShapeCode } from '../../domain/india/bbs';
 import type { EvidenceNode } from './evidence';
 import type { EngineFact } from './refs';
 import { skillBriefing } from './knowledge';
-import type { DrawingExtract, BbsSettings } from './types';
+import type { DrawingExtract, BbsSettings, BbsBar } from './types';
 import { buildEvidenceGraph, type EvidenceGraph } from './evidence';
 import { buildPlacementBands, bandViewBox, type PlacementBand } from './bands';
 import { buildMemberRegistry, type MemberRegistry } from './members';
 import { detectRegions, renderRegions, type DrawingRegion } from './regions';
+import { groupRegions, renderSections, type LogicalSection } from './logicalSections';
 import { resolveOwnership, type OwnershipClaim, type OwnershipResult } from './ownership';
 import { resolveAllPlacements, type MemberPlacement, type MemberPlacementSpec, isPlanLayout } from './placement';
 import { resolveCover, type CoverRow } from './cover';
@@ -68,7 +70,7 @@ import { renderToolMenu, type ToolContext } from './tools';
 import type { Rasteriser } from './render';
 import { Ledgers } from './lifecycle';
 import {
-  AXES, BAR_TYPES, OWNERSHIP_BASES, PLACEMENT_KINDS, SHAPE_CODES,
+  AXES, BAR_TYPES, OWNERSHIP_BASES, PLACEMENT_KINDS, SHAPE_CODES, isBarType, isShapeCode,
   checkDistributionAxis, checkEnum,
 } from './contract';
 import {
@@ -671,6 +673,13 @@ export interface BuildAttempt {
 
 export interface OrchestrateOutcome {
   result: BbsChatResult;
+  /**
+   * The ENGINEERING sections this sheet carries — the details, each owning the
+   * visual regions it is drawn across. Provenance for anything read from the
+   * sheet comes from here (`provenanceFor`), so a fact belongs to a detail and
+   * still names the cluster it was read in.
+   */
+  sections: LogicalSection[];
   understanding?: string;
   plans: string[][];
   board: TaskBoard;
@@ -784,6 +793,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
     },
   } as EvidenceGraph;
 
+  // `sections` is filled once the schedule table has been read — see below.
   const toolCtx: ToolContext = { graph, registry, bands, userFacts, doc: opts.doc, regions, rasterise: opts.rasterise };
   const calloutIds = new Set(graph.nodes.filter((n) => n.kind === 'callout').map((n) => n.id));
   const ledgers = new Ledgers();
@@ -811,7 +821,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
    * was read from can, so the working is carried and shown.
    */
   const dimSources = new Map<string, Partial<Record<'L' | 'W' | 'H', string>>>();
-  const shapes = new Map<string, string>();
+  const shapes = new Map<string, ShapeCode>();
   const escalations: { question: string; whyNeeded: string }[] = [];
   const unresolved: string[] = [];
   const acceptedConclusions: Record<string, unknown>[] = [];
@@ -867,6 +877,43 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
   const tableFacts = memberFactsFromTables(opts.extract);
   const tableDims = tableDimsByMark(tableFacts);
   const tableCells = tableCellsForCallouts(opts.extract, tableFacts);
+
+  // THE ENGINEERING BOUNDARY. Regions are where the ink clusters; sections are
+  // what the clusters describe. A detail drawn as four separated clusters is
+  // ONE section owning four regions — so a callout in one and the dimension
+  // that completes it in another are the same detail, and neither is orphaned.
+  //
+  // A bare callout names nobody; the schedule row it is printed in does. That
+  // mapping is passed in, because it is the difference between clusters of
+  // orphaned callouts and details that each belong to a member.
+  const marksByEvidence = new Map<string, string[]>();
+  {
+    const byHandle = new Map<string, string>();
+    for (const node of graph.nodes) {
+      for (const handle of node.sourceHandles ?? []) byHandle.set(handle, node.id);
+    }
+    for (const [handle, cell] of tableCells) {
+      const id = byHandle.get(handle) ?? handle;
+      if (!cell.mark) continue;
+      marksByEvidence.set(id, [...new Set([...(marksByEvidence.get(id) ?? []), cell.mark])]);
+    }
+  }
+  const { sections: logicalSections, diagnostics: sectionDiagnostics } = groupRegions(regions, graph, {
+    marksFor: (id) => marksByEvidence.get(id),
+  });
+  toolCtx.sections = logicalSections;
+  // A grouping made on proximity alone is a weaker claim than one made on a
+  // shared mark or a leader, and it goes on the record as such rather than
+  // being presented as read.
+  for (const section of logicalSections) {
+    if (section.relation === 'POSSIBLE_CONTINUATION') {
+      unresolved.push(
+        `${section.id}${section.title ? ` "${section.title}"` : ''} groups ${section.regionIds.join(', ')} with at least ` +
+          'one part joined on proximity alone (POSSIBLE_CONTINUATION) — confirm the grouping before anything rests on it',
+      );
+    }
+  }
+  for (const line of sectionDiagnostics) unresolved.push(`sections: ${line}`);
   for (const note of tableFacts.notes) unresolved.push(`schedule table: ${note}`);
 
   // A CALLOUT PRINTED IN A MEMBER'S OWN SCHEDULE ROW BELONGS TO THAT MEMBER.
@@ -1281,7 +1328,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
   if (opts.askUser) {
     for (let round = 1; round <= limits.maxAskRounds; round++) {
       if (!lastResult) break;
-      const failures = lastResult.verification.failures as never as VerificationFailure[];
+      const failures = lastResult.verification.failures;
       const questions = questionsFrom(failures, new Map(), {
         max: limits.maxQuestionsPerRound,
         alreadyAsked: askedDependencies,
@@ -1439,6 +1486,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
       rows: lastEngine?.rows ?? [],
       reconciliation: lastEngine?.reconciliation,
     }),
+    sections: logicalSections,
     tableFacts,
   };
 
@@ -1456,7 +1504,14 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
       `The sheet establishes ${registry.members.length} member(s): ${registry.members.map((m) => `${m.id} "${m.mark}"${m.declaredAs ? ` (declared "${m.declaredAs}")` : ''} tagged ${m.markEvidenceIds.length}×`).join('; ')}`,
       `It carries ${calloutIds.size} reinforcement callout(s), ${graph.nodes.filter((n) => n.kind === 'leader').length} leader(s) and ${graph.dimensions.length} readable dimension(s).`,
       '',
-      `REGIONS the sheet separates into (${regions.length}):`,
+      `SECTIONS — the engineering details this sheet carries (${logicalSections.length}).`,
+      'A section is the unit that means something: one detail, however many separated',
+      'clusters the drafter drew it as. Read a section WHOLE — its dimensions, its',
+      'callouts and its notes may sit in different clusters and are still one detail.',
+      renderSections(logicalSections),
+      '',
+      `The ${regions.length} visual REGION(s) those sections are drawn across — use these to crop and re-read,`,
+      'never as the boundary of a detail:',
       renderRegions(regions),
       '',
       `LAYOUT BANDS of repeated marks (${bands.length}):`,
@@ -1889,6 +1944,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
         !graph.byId.has(id) &&
         !bands.some((b) => b.id === id) &&
         !regions.some((r) => r.id === id) &&
+        !logicalSections.some((sec) => sec.id === id) &&
         !sectionIds.has(id),
     );
     if (bogus.length) {
@@ -1920,7 +1976,9 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
           memberId: m.id,
           basis: c.basis as OwnershipClaim['basis'],
           reason: `${String(c.reasoning ?? '').slice(0, 200)}${c.confidence !== undefined ? ` [confidence ${c.confidence}]` : ''}`,
-          barType: (c.barType as string) || undefined,
+          // `checkEnum` above proved this is a legal bar type; the guard
+          // narrows from that same fact instead of casting past it.
+          barType: isBarType(c.barType) ? c.barType : undefined,
           distributionAxis: (c.distributionAxis as 'L' | 'W' | 'H') || undefined,
         });
         ledgers.calloutOffered(calloutId, m.id);
@@ -2059,7 +2117,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
         if (typeof (ref as { value?: unknown }).value === 'number') {
           return { ok: false, objection: 'a dimension may not carry a typed value — point at the drawing text that states it' };
         }
-        const r = resolveRef(ref as never, { graph, userFacts });
+        const r = resolveRef(ref, { graph, userFacts });
         if (!r.ok) return { ok: false, objection: `that pointer did not resolve — ${r.reason}` };
         const cur = dims.get(m.id) ?? {};
         cur[c.axis as 'L' | 'W' | 'H'] = r.mm;
@@ -2078,7 +2136,10 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
           subject: calloutId, required: true, akaFields: ['shape', 'code'], raw: c,
         });
         if (bad) return { ok: false, objection: bad };
-        shapes.set(calloutId, c.shapeCode as string);
+        // `checkEnum` has just proved this is one of SHAPE_CODES; the guard
+        // narrows the type from the same fact rather than asserting past it.
+        if (!isShapeCode(c.shapeCode)) return { ok: false, objection: `${calloutId}: unknown shape code` };
+        shapes.set(calloutId, c.shapeCode);
         return { ok: true };
       }
 
@@ -2275,7 +2336,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
     });
 
     const byId = new Map(scheduled.map((m) => [m.id, m]));
-    const bars: unknown[] = [];
+    const bars: BbsBar[] = [];
     for (const disp of ownership.dispositions.values()) {
       if (disp.state !== 'assigned' && disp.state !== 'shared') continue;
       const node = graph.byId.get(disp.calloutId);
@@ -2326,9 +2387,9 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
         for (const comp of components) {
           bars.push({
             memberMark: m.mark,
-            barType: (disp.barType ?? 'MAIN') as never,
+            barType: disp.barType ?? 'MAIN',
             diaMm: comp.dia,
-            shapeCode: (shapes.get(disp.calloutId) ?? '00') as never,
+            shapeCode: shapes.get(disp.calloutId) ?? '00',
             spacingMm: typeof node.metadata.spacingMm === 'number' ? node.metadata.spacingMm : undefined,
             manualCount: comp.count,
             legs: typeof node.metadata.legs === 'number' ? node.metadata.legs : undefined,
@@ -2355,7 +2416,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
     // It fills MISSING axes only: a dimension the model established by pointing
     // at the drawing always wins, so this cannot overrule a conclusion.
     const grounded = groundDeclaredDims(
-      { members: members as never, bars: bars as never, unresolved: [] },
+      { members, bars, unresolved: [] },
       opts.extract.declared ?? [],
     );
 
@@ -2437,7 +2498,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
 
     const report = verifyAll({
       interpretation,
-      result: engine as never,
+      result: engine,
       graph,
       placements: new Map([...placed].map(([k, v]) => [byId.get(k)?.mark ?? k, { ok: v.ok, count: v.count, continuous: v.continuous, reason: v.reason, unverifiedExtent: v.unverifiedExtent }])),
       runMm: runMmForJob(),
@@ -2449,8 +2510,8 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
       id: `orchestrated-${startedAt}`,
       drawingName: opts.extract.drawingName,
       runMm: runMmForJob(),
-      result: engine as never,
-      verification: report as never,
+      result: engine,
+      verification: report,
       manifest: engine.manifest,
       settings,
       settingSources,
@@ -2458,8 +2519,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
       cover: covers,
       placementWorking: new Map([...placed].map(([k, v]) => [byId.get(k)?.mark ?? k, v.working ?? v.reason ?? ''])),
       extentClaims,
-      ledgers,
-    } as never);
+    });
     putChatResult(artifact);
     lastResult = artifact;
     lastEngine = engine;
@@ -2530,7 +2590,7 @@ export async function runOrchestrator(opts: OrchestrateOptions): Promise<Orchest
       );
     }
 
-    const barsBy = new Set(bars.map((b) => (b as { memberMark: string }).memberMark));
+    const barsBy = new Set(bars.map((b) => b.memberMark));
     return {
       n,
       rows: artifact.rows.length,

@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { useStudioData } from '../studio/data';
 import { dockIsOpen, useStudio, useStudioStore } from '../studio/store';
 import { CommandPalette } from './CommandPalette';
+import { BbsEditorHost } from './BbsEditorHost';
 import { Dock } from './Dock';
 import { FilesView } from './FilesView';
 import { RegisterPanel, REGISTER_SEARCH_ID } from './RegisterPanel';
@@ -170,6 +171,7 @@ export function StudioShell() {
         </div>
       </div>
       {ui.paletteOpen && <CommandPalette />}
+      {ui.bbsEditorArtifactId && <BbsEditorHost artifactId={ui.bbsEditorArtifactId} />}
       <Toasts />
     </div>
   );

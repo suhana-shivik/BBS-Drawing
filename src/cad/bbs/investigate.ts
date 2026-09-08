@@ -32,6 +32,7 @@
 // did not get there.
 // ============================================================
 import { renderToolMenu, runTool, type ToolContext, type ToolRequest, type ToolResult } from './tools';
+import { isBarType } from './contract';
 import type { OwnershipClaim, OwnershipBasis } from './ownership';
 import type { MemberRegistry } from './members';
 
@@ -194,7 +195,9 @@ export function validateProposal(p: Proposal, ctx: ValidationContext): Validatio
       memberId: member.id,
       basis: d.basis,
       reason: p.reasoning.slice(0, 300),
-      barType: d.barType,
+      // the investigation's own reply is model output too — it is narrowed
+      // here, at the point it becomes a claim, rather than trusted downstream
+      barType: isBarType(d.barType) ? d.barType : undefined,
       distributionAxis: d.distributionAxis,
     },
   };

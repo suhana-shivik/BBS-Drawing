@@ -647,3 +647,91 @@ export function readXlsxParts(archive: Uint8Array): Map<string, string> {
   for (const [name, data] of readStoredZip(archive)) out.set(name, decoder.decode(data));
   return out;
 }
+
+// ------------------------------------------------------------
+// reading a workbook back
+// ------------------------------------------------------------
+//
+// The writer emits inline strings and no sharedStrings part, which makes the
+// reader small: every value is either a number in <v> or text in <is><t>.
+// This exists so a person can take a schedule away, complete it in Excel and
+// bring it back — the same edits the in-app grid makes, through the same
+// `applyEdits`. It reads CELLS, never formulas: a workbook is an input
+// surface, and nothing in it is ever treated as a calculation.
+
+// `<c ` or `<c/>` — the lookahead keeps this off <cols>, <col> and <cellXfs>.
+//
+// The two forms are spelled out rather than made optional. A styled blank is
+// written `<c r="K14" s="3"/>`, and an OPTIONAL body group would happily skip
+// past it to the next `</c>` — swallowing the cells in between and shifting
+// every value in the row one column left.
+const CELL_RE = /<c(?=[ \/>])([^>]*?)(?:\/>|>(.*?)<\/c>)/gs;
+const ATTR_RE = /(\w+)="([^"]*)"/g;
+
+function unescapeXml(value: string): string {
+  return value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)))
+    .replace(/&amp;/g, '&');
+}
+
+/** Split "BC12" into its column index (0-based) and row number (1-based). */
+export function parseCellRef(ref: string): { column: number; row: number } | null {
+  const m = /^([A-Z]+)(\d+)$/.exec(ref);
+  if (!m) return null;
+  let column = 0;
+  for (const ch of m[1]) column = column * 26 + (ch.charCodeAt(0) - 64);
+  return { column: column - 1, row: Number(m[2]) };
+}
+
+/**
+ * One sheet as a grid of values — `null` where the cell is empty. Row and
+ * column order is the sheet's own, so a header row read here lines up with
+ * the columns the writer emitted.
+ */
+export function readSheetGrid(sheetXml: string): (string | number | null)[][] {
+  const rows: (string | number | null)[][] = [];
+  let match: RegExpExecArray | null;
+  CELL_RE.lastIndex = 0;
+  while ((match = CELL_RE.exec(sheetXml)) !== null) {
+    const attrs: Record<string, string> = {};
+    let a: RegExpExecArray | null;
+    ATTR_RE.lastIndex = 0;
+    while ((a = ATTR_RE.exec(match[1])) !== null) attrs[a[1]] = a[2];
+    const at = attrs.r ? parseCellRef(attrs.r) : null;
+    if (!at) continue;
+    const body = match[2] ?? '';
+
+    let value: string | number | null = null;
+    if (attrs.t === 'inlineStr') {
+      const text = /<t[^>]*>(.*?)<\/t>/s.exec(body);
+      value = text ? unescapeXml(text[1]) : null;
+    } else {
+      const v = /<v[^>]*>(.*?)<\/v>/s.exec(body);
+      if (v) {
+        const raw = unescapeXml(v[1]);
+        const n = Number(raw);
+        value = raw !== '' && Number.isFinite(n) ? n : raw === '' ? null : raw;
+      }
+    }
+
+    const r = at.row - 1;
+    while (rows.length <= r) rows.push([]);
+    const line = rows[r];
+    while (line.length <= at.column) line.push(null);
+    line[at.column] = value;
+  }
+  return rows;
+}
+
+/** Every sheet in a workbook this module wrote, in part-name order. */
+export function readXlsxGrids(archive: Uint8Array): Map<string, (string | number | null)[][]> {
+  const out = new Map<string, (string | number | null)[][]>();
+  const parts = readXlsxParts(archive);
+  const names = [...parts.keys()].filter((n) => /^xl\/worksheets\/sheet\d+\.xml$/.test(n)).sort();
+  for (const name of names) out.set(name, readSheetGrid(parts.get(name)!));
+  return out;
+}

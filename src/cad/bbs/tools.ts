@@ -31,6 +31,7 @@ import type { MemberRegistry, CanonicalMember } from './members';
 import { bandViewBox, type PlacementBand } from './bands';
 import { memberEvidence } from './members';
 import { regionOf, renderRegions, resolveHint, type DrawingRegion } from './regions';
+import { sectionOf, type LogicalSection } from './logicalSections';
 import { fullSheetSvg, regionSvg, validImage, type Rasteriser } from './render';
 import type { CadDocument } from '../types';
 
@@ -42,6 +43,13 @@ export interface ToolContext {
   /** needed only by the vision tools; absent means text-only, and it says so */
   doc?: CadDocument;
   regions?: readonly DrawingRegion[];
+  /**
+   * The ENGINEERING sections — the regions above, grouped into the details
+   * they belong to. A detail drawn as four separated clusters is one section
+   * here and four regions there; ownership and provenance follow this, and
+   * crops and re-reads still follow the regions.
+   */
+  sections?: readonly LogicalSection[];
   rasterise?: Rasteriser;
 }
 
@@ -285,13 +293,48 @@ export const TOOLS = {
     } as ImageResult;
   },
 
-  /** which region a piece of evidence sits in — the containment the graph lacks */
+  /**
+   * Which SECTION a piece of evidence belongs to — the engineering answer.
+   *
+   * The visual region is reported too, because a crop or a re-read still
+   * addresses that cluster. But a detail drawn across four clusters answers
+   * with one section and all four regions, so a callout in one and the
+   * dimension that completes it in another are visibly the same detail.
+   */
+  getSectionOf(ctx: ToolContext, a: { evidenceId: string }): ToolResult {
+    const section = sectionOf(ctx.sections ?? [], a.evidenceId);
+    const r = regionOf(ctx.regions ?? [], a.evidenceId);
+    if (!section) {
+      return r
+        ? {
+            ok: true,
+            text: `${a.evidenceId} sits in ${r.id} (${r.kind})${r.label ? ` "${r.label}"` : ''}, which is in no grouped section`,
+            evidenceIds: r.evidenceIds.slice(0, 40),
+          }
+        : nothing(`${a.evidenceId} is in no separated region`);
+    }
+    return {
+      ok: true,
+      text:
+        `${a.evidenceId} belongs to ${section.id}${section.title ? ` "${section.title}"` : ''} [${section.kind}]` +
+        `${r ? `, in its ${r.id} cluster` : ''} — drawn across ${section.regionIds.length} region(s): ` +
+        `${section.regionIds.join(', ')}` +
+        `${section.marks.length ? `; describes ${section.marks.join(', ')}` : ''}` +
+        `${section.relation === 'POSSIBLE_CONTINUATION' ? '. POSSIBLE_CONTINUATION — one part joined on proximity alone' : ''}`,
+      evidenceIds: section.evidenceIds.slice(0, 60),
+    };
+  },
+
+  /** which region a piece of evidence sits in — the cluster, not the detail */
   getRegionOf(ctx: ToolContext, a: { evidenceId: string }): ToolResult {
     const r = regionOf(ctx.regions ?? [], a.evidenceId);
     if (!r) return nothing(`${a.evidenceId} is in no separated region`);
+    const section = sectionOf(ctx.sections ?? [], a.evidenceId);
     return {
       ok: true,
-      text: `${a.evidenceId} sits in ${r.id} (${r.kind})${r.label ? ` "${r.label}"` : ''} — ${r.basis}`,
+      text:
+        `${a.evidenceId} sits in ${r.id} (${r.kind})${r.label ? ` "${r.label}"` : ''} — ${r.basis}` +
+        `${section ? `. That cluster is part of ${section.id}, drawn across ${section.regionIds.join(', ')}` : ''}`,
       evidenceIds: r.evidenceIds.slice(0, 40),
     };
   },
@@ -705,7 +748,8 @@ export const TOOL_MENU: { name: ToolName; args: string; use: string }[] = [
   { name: 'getFullDrawingImage', args: '{reason}', use: 'SEE the whole sheet — start here to orient yourself' },
   { name: 'getDrawingRegions', args: '{}', use: 'the regions the sheet separates into, and what each contains' },
   { name: 'getDrawingRegionImage', args: '{regionId | regionHint | x1,y1,x2,y2, reason}', use: 'SEE one region — by id, by hint like "the TB detail", or by bounds' },
-  { name: 'getRegionOf', args: '{evidenceId}', use: 'which region a callout, mark or leader sits in' },
+  { name: 'getSectionOf', args: '{evidenceId}', use: 'which ENGINEERING SECTION a callout, mark, dimension or note belongs to — the whole detail, however many separated clusters it is drawn across' },
+  { name: 'getRegionOf', args: '{evidenceId}', use: 'which visual cluster something sits in, and the section that cluster is part of' },
   { name: 'getFullDrawing', args: '{}', use: 'the whole sheet: every member, every callout, the bands and the extent' },
   { name: 'getMembers', args: '{}', use: 'every member the drawing establishes, with aliases' },
   { name: 'getDrawingRegion', args: '{x1,y1,x2,y2,page}', use: 'everything inside a box — paged, never truncated' },

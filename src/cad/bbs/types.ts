@@ -260,6 +260,15 @@ export interface BbsBar {
   countFormula?: string;
   /** a stated rule for the cutting length — CUSTOM_FORMULA over the same variables */
   lengthFormula?: string;
+  /**
+   * THE BAR'S OWN LEG DIMENSIONS, when the drawing states them or a person
+   * completes them in the editable schedule. A, B, C, D are normally DERIVED
+   * from the member's axes less cover; a schedule that dimensions the bar
+   * itself states them, and then they govern. The shape formula still
+   * computes the cutting length from them — this is an input, not a way to
+   * type a length in.
+   */
+  legDimsMm?: Partial<Record<'A' | 'B' | 'C' | 'D', number>>;
 }
 
 export interface DrawnGeometry {
@@ -470,4 +479,28 @@ export interface BbsResult {
   validation?: import('../../../calculations/validation').ScheduleValidation;
   /** per-row differences between the stored rows and a fresh pass of the pipeline */
   rowDrift?: import('../../../calculations/schedule').RowDrift[];
+  /**
+   * EXACTLY WHAT THE PIPELINE WAS GIVEN, so a filed schedule can be rebuilt
+   * without the drawing. The editable schedule completes a blocked row by
+   * editing these inputs and running `scheduleRow` again — the same function
+   * that produced the row in the first place. Without this the editor would
+   * have to reconstruct bars from the printed columns, which is how a second
+   * calculation engine starts.
+   */
+  engineInputs?: EngineInputs;
+}
+
+/** The inputs a build was run with — bars by bar mark, members by member mark. */
+export interface EngineInputs {
+  bars: Record<string, BbsBar>;
+  members: Record<string, BbsMember>;
+  settings: BbsSettings;
+  runMm: number | null;
+  coverTable: { member: string }[];
+  /** the member count a project fact supplied, when the interpretation carried none */
+  takeoffCounts: Record<string, number>;
+  /** the cutting length a person typed for a bar, by bar mark */
+  enteredCuttingLengthMm?: Record<string, number>;
+  /** the sheet declares the cutting length a design input, by bar mark */
+  declaredInputs?: Record<string, { where: string; saidAs: string }>;
 }

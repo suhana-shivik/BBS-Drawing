@@ -1533,3 +1533,49 @@
   background: var(--panel-3);
   color: var(--accent);
 }
+
+/* THE DETAIL, AND THE READ AREAS IT IS DRAWN ACROSS.
+   A pedestal drawn as a plan, a section, its callouts and a note is one
+   engineering detail and four read areas. The heading is the detail; the rows
+   under it are the areas, indented so the relationship is visible without a
+   legend. */
+.studio .section-group + .section-group {
+  margin-top: 6px;
+}
+
+.studio .section-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px 3px;
+  font-size: 11.5px;
+  border-bottom: 1px solid var(--row-border);
+}
+
+.studio .section-group-head .sg-name {
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.studio .section-group-head .sg-meta {
+  color: var(--text-faint);
+}
+
+.studio .section-group-head .sg-flag {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.studio .section-group-head.is-uncertain .sg-name {
+  color: var(--warning-text);
+}
+
+.studio .section-group .section-row {
+  padding-left: 18px;
+}

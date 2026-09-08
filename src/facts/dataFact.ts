@@ -33,6 +33,8 @@ export interface DataFactRecord {
   drawingId?: string;
   drawingHash?: string;
   sectionId?: string;
+  /** every visual region the section is drawn across */
+  regionIds?: string[];
   memberId: string;
   parameter: string;
   value: FactValue;
@@ -116,6 +118,7 @@ export function toDataFact(entry: LedgerEntry, ctx: { drawingId?: string; drawin
     drawingId: fact.source?.documentId ?? ctx.drawingId,
     drawingHash: fact.sourceDrawingHash ?? ctx.drawingHash,
     sectionId: fact.source?.sectionId,
+    regionIds: fact.source?.regionIds,
     memberId: factSubject(fact.id),
     parameter,
     value: fact.value,

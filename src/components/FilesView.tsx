@@ -128,6 +128,9 @@ export function FilesView() {
             n.id === browse.selection[0] && n.kind === 'file' && !!n.artifactId,
         )
       : undefined;
+  // Only a SCHEDULE is editable — a quantity take-off has no engineering
+  // inputs to complete, and offering Expand on one would be a dead end.
+  const editable = downloadable?.dockTab === 'bbs' ? downloadable : undefined;
   // Exactly one drawing OR one PDF page selected — `entryId`/`pdfId` are only
   // set on a register entry's own row (§ fileNodeFor / the PDF loop in
   // buildGroups). Renaming a filed output has no defined target: its name is
@@ -455,6 +458,27 @@ export function FilesView() {
         </button>
         {/* An issued output is a deliverable — it comes out of the folder that
             lists it, under the .xlsx name the row already shows (§6.2). */}
+        {/* A filed schedule is rarely finished on the first pass. Expand
+            opens it as an editable grid so the rows that are still blocked,
+            mismatched or resting on an assumption can be completed here —
+            without going back to the drawing reader for every correction. */}
+        <button
+          type="button"
+          className="btool"
+          data-testid="expand-bbs"
+          title={
+            editable
+              ? `Expand and edit ${editable.name}`
+              : 'Select a filed schedule to complete its unresolved inputs'
+          }
+          disabled={!editable}
+          onClick={() => {
+            if (!editable?.artifactId) return;
+            store.openBbsEditor(editable.artifactId);
+          }}
+        >
+          <Icon name="expand" /> Expand / Edit
+        </button>
         <button
           type="button"
           className="btool"

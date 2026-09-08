@@ -123,6 +123,8 @@ const noopActions = (): StudioData['actions'] => ({
   deleteFolder: vi.fn(),
   fileInFolder: vi.fn(),
   moveToFolder: vi.fn(),
+    bbsEditorGrid: vi.fn(() => null),
+    saveBbsEdits: vi.fn(async () => null),
 });
 
 function renameButton() {

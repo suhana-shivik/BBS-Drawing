@@ -23,6 +23,7 @@ export interface FactWriteSource {
   revision: string;
   documentId?: string;
   sectionId?: string;
+  regionIds?: string[];
   /** identity of the exact drawing bytes/structure — enables staleness (§3.4) */
   sourceDrawingHash?: string;
   /** ISO date; defaults to today */
@@ -38,6 +39,7 @@ function stamp(source: FactWriteSource): Pick<Fact, 'source' | 'sourceDrawingHas
       revision: source.revision,
       ...(source.documentId !== undefined ? { documentId: source.documentId } : {}),
       ...(source.sectionId !== undefined ? { sectionId: source.sectionId } : {}),
+      ...(source.regionIds !== undefined ? { regionIds: source.regionIds } : {}),
     },
     ...(source.sourceDrawingHash !== undefined
       ? { sourceDrawingHash: source.sourceDrawingHash }
@@ -236,6 +238,7 @@ export interface DeclaredFactInput {
   unit?: string;
   /** which section of the split package it was read in, e.g. "REGION-11" */
   sectionId?: string;
+  regionIds?: string[];
   /** verbatim, exactly as drawn — what makes a DECLARED fact quotable */
   rawText: string;
   /** DXF entity handles behind the text, e.g. ["79A47"] — the audit trail */
@@ -261,6 +264,7 @@ export function factsFromTranscription(
       source: {
         ...base.source!,
         ...(d.sectionId !== undefined ? { sectionId: d.sectionId } : {}),
+        ...(d.regionIds !== undefined ? { regionIds: d.regionIds } : {}),
         rawText: d.rawText,
         ...(d.handles !== undefined ? { handles: d.handles } : {}),
       },

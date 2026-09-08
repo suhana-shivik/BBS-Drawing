@@ -41,6 +41,7 @@
 // its member ids — not the same id quietly appearing in five answers.
 // ============================================================
 import type { EvidenceNode } from './evidence';
+import type { BarTypeName } from './contract';
 import type { CanonicalMember } from './members';
 
 export type CalloutState = 'assigned' | 'shared' | 'excluded' | 'unresolved';
@@ -77,8 +78,8 @@ export interface OwnershipClaim {
   distanceMm?: number;
   /** the model's stated reason, carried into the disposition */
   reason: string;
-  /** what the pass returned about the bar itself */
-  barType?: string;
+  /** what the pass returned about the bar itself — validated against BAR_TYPES at the gate */
+  barType?: BarTypeName;
   distributionAxis?: 'L' | 'W' | 'H';
 }
 
@@ -91,7 +92,7 @@ export interface CalloutDisposition {
   basis?: OwnershipBasis;
   /** for `unresolved` through ambiguity: who was in contention */
   contenders?: { memberId: string; basis: OwnershipBasis; distanceMm?: number }[];
-  barType?: string;
+  barType?: BarTypeName;
   distributionAxis?: 'L' | 'W' | 'H';
 }
 

@@ -35,7 +35,7 @@ import {
   type ShapeCode,
   type SummaryLine, polylineLength } from '../src/domain/india/bbs';
 import type { BbsBar, BbsMember, BbsRow, BbsSettings } from '../src/cad/bbs/types';
-import { isLinearMember } from '../src/cad/bbs/build';
+import { isLinearMember } from './memberKind';
 import { evaluateFormula, type FormulaVariables } from './formula';
 import { validateRow } from './validation';
 
@@ -569,6 +569,19 @@ export function computeLength(
         `Return legs taken as the ${depth} mm depth less 2 × ${cover} mm cover. If the detail ` +
           'shows a shorter upturn, correct the cover or the shape.',
       );
+    }
+  }
+
+  // THE BAR'S OWN DIMENSIONS GOVERN WHEN THEY ARE STATED. A, B, C, D are
+  // derived above from the member's axes less cover; a schedule that
+  // dimensions the bar itself — or a person completing a blocked row in the
+  // editable schedule — states them, and the shape formula then computes the
+  // cutting length FROM them. Nothing here types a length in.
+  const stated = bar.legDimsMm ?? {};
+  for (const [leg, mm] of Object.entries(stated)) {
+    if (typeof mm === 'number' && Number.isFinite(mm) && mm > 0 && shape.dims.includes(leg)) {
+      if (dims[leg] !== mm) parts.push(`${leg} = ${mm} (stated on the bar, not derived)`);
+      dims[leg] = mm;
     }
   }
 

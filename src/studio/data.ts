@@ -319,6 +319,27 @@ export interface SheetSectionsInfo {
    */
   gaps: GapClusterData[];
   /**
+   * THE ENGINEERING DETAILS THIS SHEET CARRIES.
+   *
+   * A visual region is where the ink clusters; a logical section is what the
+   * clusters describe. A pedestal drawn as a plan, a section, its bar
+   * callouts and a note is FIVE regions and ONE detail — so the panel lists
+   * the detail and nests its regions under it, and the BBS reads the detail.
+   *
+   * Region ids are kept, because a crop, a re-read, a highlight and an entity
+   * selection all still address a region.
+   */
+  logicalSections: {
+    id: string;
+    title?: string;
+    kind: string;
+    marks: string[];
+    regionIds: string[];
+    /** POSSIBLE_CONTINUATION when a region joined on proximity alone */
+    relation: 'CONFIRMED' | 'POSSIBLE_CONTINUATION';
+    basis: string[];
+  }[];
+  /**
    * Every section the read filed. `bounds` is the millimetre box it was cut
    * from — the Viewport outlines them on the sheet so the read is VISIBLE:
    * a coverage percentage says 97.5% but not WHICH 2.5% went unread.
@@ -569,6 +590,44 @@ export interface StudioActions {
    * or null when the artifact cannot be read back into a schedule.
    */
   downloadArtifact: (artifactId: string, format: 'xlsx' | 'csv') => string | null;
+  /**
+   * The filed schedule as an EDITABLE grid: every row, calculated and
+   * unfinished alike, with the inputs a person may complete and the outputs
+   * the pipeline computed. Null when the artifact carries no engine inputs —
+   * a schedule filed before this existed cannot be rebuilt, and says so
+   * rather than being half-editable.
+   */
+  bbsEditorGrid: (artifactId: string) => import('../../calculations/bbsEdit').EditableGrid | null;
+  /**
+   * Stage 4, end to end: validate the edits, file them as USER_INPUT
+   * DataFacts beside the drawing's own values, invalidate the rows that read
+   * them, recompute through `calculations/schedule.ts`, reconcile, validate,
+   * and file the result as the next version in the same BBS folder. The
+   * previous version is untouched — it is the audit trail.
+   */
+  saveBbsEdits: (
+    artifactId: string,
+    edits: readonly import('../../calculations/bbsEdit').CellEdit[],
+    opts?: {
+      /**
+       * Deliberately file the result as the NEXT version, leaving the one
+       * being edited untouched. Without it the schedule is corrected in
+       * place: a recalculation is not a revision.
+       */
+      asNewVersion?: boolean;
+      /** disputes the person has checked, which stop holding FINAL back once recorded */
+      acknowledged?: readonly string[];
+    },
+  ) => Promise<{
+    status: 'FINAL' | 'INCOMPLETE';
+    version: number;
+    /** the artifact written — the SAME id as the one opened, unless a new version was asked for */
+    artifactId: string;
+    newVersion: boolean;
+    rejected: readonly import('../../calculations/bbsEdit').EditRejection[];
+    recalculated: number;
+    facts: number;
+  } | null>;
   /**
    * Delete a drawing — its register entry, its Sections/ folder and every
    * output filed under it (BBS, quantities, the "about this drawing" note).

@@ -205,6 +205,7 @@ describe('the visible columns, in the visible order', () => {
       'factIds',
       'confidence',
       'engineering',
+      'confirmFromDrawing',
     ]);
     // §6.2 rule 1: a column no row can fill is absent, not blank
     const noSpacing = { ...RESULT, rows: ROWS.map((r) => ({ ...r, spacingMm: undefined })) };

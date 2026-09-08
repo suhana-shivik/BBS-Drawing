@@ -27,8 +27,7 @@ import type {
   BbsResult,
   BbsRow,
   BbsSettings,
-  DrawingExtract,
-} from './types';
+  DrawingExtract, EngineInputs } from './types';
 import type { BBSBuildManifest } from '../../core/bbs/schemas';
 import { describeBar } from './describe';
 import type { BbsOverrides } from './overrides';
@@ -199,43 +198,9 @@ export function groundDeclaredDims(
  * tie beam printed 0.25 m T16 longitudinals — 350 minus cover — as computed
  * rows, and a 100 m wall totalled 0.731 MT without one figure LOOKING wrong.
  */
-/** the words that make a member a thing that RUNS rather than a thing that sits */
-const LINEAR_WORDS = /\b(beam|wall|fence|parapet|drain)\b/i;
-
-/**
- * Is a member with this mark (and declared type, when the sheet gives one) a
- * RUNNING structure — one whose extent is a length along which bars repeat?
- *
- * This is the ONE question that decides whether a run is a dimension of the
- * member at all. A beam, a wall, a fence, a parapet, a drain have a run; a
- * footing, a column, a pedestal, a slab panel, a stair flight do not — they
- * are counted, and each one's bars are cut from its own plan size. Every
- * caller that would ask for, apply, or compare against a TOTAL RUN must ask
- * this first, so that the question is only ever put for a member it can
- * answer for. See `isLinearMember` for the same test on a scheduled member.
- */
-export function isLinearMark(mark: string, type = ''): boolean {
-  if (type && LINEAR_WORDS.test(type)) return true;
-  if (LINEAR_WORDS.test(mark)) return true;
-  return /^(TB|PB|GB|LB|RB|BW|RW)\d{0,3}$/i.test(mark.trim());
-}
-
-export function isLinearMember(member: BbsMember): boolean {
-  if (LINEAR_WORDS.test(member.type)) return true;
-  // THE MARK IS THE ONLY PLACE THE WORD APPEARS ON THE ORCHESTRATED PATH.
-  //
-  // `type` was the only thing tested, and the orchestrated build names every
-  // member `type: 'member'` — it has no type to give. So "RCC WALL" was not a
-  // wall: its bars took the counted-object path, and a bar the drawing spaces
-  // along the wall's run was measured across its 200 mm THICKNESS instead of
-  // its height. That printed a 100 mm "wall bar", 501 of them, and the row
-  // computed cleanly all the way to a weight.
-  //
-  // A declared member's mark IS its name on this kind of sheet — "RCC WALL",
-  // "TIE BEAM", "BOUNDARY WALL" — so the same words are read from it.
-  if (LINEAR_WORDS.test(member.mark)) return true;
-  return /^(TB|PB|GB|LB|RB|BW|RW)\d{0,3}$/i.test(member.mark.trim());
-}
+// The linear predicates moved to `calculations/memberKind.ts` — the layer that
+// depends on them. Re-exported here so every existing caller is unchanged.
+export { isLinearMark, isLinearMember } from '../../../calculations/memberKind';
 
 /** the answered total run, in mm — from the interview's take-off facts */
 export function runMmFromTakeoff(takeoff: Record<string, unknown> | undefined): number | null {
@@ -317,6 +282,24 @@ export function buildBbs(
   const rows: BbsRow[] = [];
   const incomplete: { barMark: string; reason: string }[] = [];
   const used = new Set<string>();
+  // WHAT THIS BUILD WAS GIVEN, recorded as it is used. A filed schedule is
+  // rebuilt from exactly this, so completing a blocked row in the editable
+  // schedule runs the same `scheduleRow` over the same inputs.
+  const engineInputs: EngineInputs = {
+    bars: {},
+    members: {},
+    settings,
+    runMm,
+    coverTable: (extract.notes.coverByMember ?? []).map((c) => ({ member: c.member })),
+    takeoffCounts: {},
+    enteredCuttingLengthMm: {},
+    declaredInputs: {},
+  };
+  for (const m of withCounts) {
+    engineInputs.members[m.mark] = m;
+    const takeoffCount = countFromTakeoff(m.mark, takeoff);
+    if (takeoffCount !== null) engineInputs.takeoffCounts[m.mark] = takeoffCount;
+  }
   const coverTable = extract.notes.coverByMember ?? [];
 
   // EVERY ROW GOES THROUGH calculations/schedule.ts — geometry, cutting length,
@@ -360,6 +343,13 @@ export function buildBbs(
       barMark,
       description: describeBar(bar, member),
     });
+    engineInputs.bars[barMark] = bar;
+    if (typeof typedLen === 'number' && Number.isFinite(typedLen) && typedLen > 0) {
+      engineInputs.enteredCuttingLengthMm![barMark] = typedLen;
+    }
+    if (declaredInput) {
+      engineInputs.declaredInputs![barMark] = { where: declaredInput.where, saidAs: declaredInput.saidAs };
+    }
     rows.push(scheduled.row);
     incomplete.push(...scheduled.incomplete);
   }
@@ -452,6 +442,7 @@ export function buildBbs(
     summary,
     reconciliation,
     validation,
+    engineInputs,
     incomplete,
     interpretation,
     sanity,

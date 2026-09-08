@@ -106,6 +106,12 @@ export interface StudioState {
     switcherOpen: boolean;
     /** Ctrl+K — the command palette over the project index (R6). */
     paletteOpen: boolean;
+    /**
+     * The filed BBS open in Expand/Edit, by artifact id. A schedule is
+     * completed against the artifact it was filed as, never against "the
+     * current schedule" — the row a person is fixing belongs to a version.
+     */
+    bbsEditorArtifactId: string | null;
   };
   /** R4 — the Specification view's one-shot navigation target (§6.4). */
   spec: {
@@ -419,6 +425,7 @@ export function initialState(overrides?: Partial<StudioState>): StudioState {
       activeTool: 'pan',
       switcherOpen: false,
       paletteOpen: false,
+      bbsEditorArtifactId: null,
       ...persistedUi(),
     },
     spec: { reveal: null },
@@ -706,6 +713,14 @@ export class StudioStore {
 
   setPaletteOpen(open: boolean): void {
     if (this.state.ui.paletteOpen !== open) this.patch({ ui: { paletteOpen: open } });
+  }
+
+  // --- Expand / Edit a filed schedule --------------------------------------
+
+  openBbsEditor(artifactId: string | null): void {
+    if (this.state.ui.bbsEditorArtifactId !== artifactId) {
+      this.patch({ ui: { bbsEditorArtifactId: artifactId } });
+    }
   }
 
   // --- Specification view (R4/R6 §6.4: a fact result is a location) --------

@@ -11,7 +11,27 @@
 // and the REFEREE's independent expectation: steel as kg per m³ of concrete,
 // by element kind. That is the cross-check every estimator in the country
 // already trusts, it is deterministic, and it is computed from the quantum
-// alone — so its errors cannot correlate with the engine's row arithmetic.
+// alone
+// 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//— so its errors cannot correlate with the engine's row arithmetic.
 //
 // The AI's ideal (Stage 1 of the protocol) joins later as the third voice.
 // Nothing here writes a bill number: sections judge, the engine bills.

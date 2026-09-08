@@ -94,6 +94,7 @@ function buildData(): {
     residual: residualFor(pkg),
     unexplainedGap: hasUnexplainedGap(pkg),
     gaps: [],
+    logicalSections: [],
     sections: pkg.sections.map((s) => ({
       sheetId: sectionSheetId(docId, s.sectionId),
       sectionId: s.sectionId,
@@ -916,5 +917,99 @@ describe('step 8 — the section check, reported on the rows', () => {
     const { data } = withVerdicts({ [id]: { status: 'PASS', confidence: 1, reasons: [] } });
     mount(data, (s) => s.openSheet('sh1'));
     expect(screen.getByTestId('validate-sections').textContent).toBe('Check again');
+  });
+});
+
+// ============================================================
+// THE PANEL LISTS DETAILS, NOT INK CLUSTERS
+// ============================================================
+//
+// A pedestal drawn as a plan, a section and its bar callouts is THREE read
+// areas and ONE engineering detail. Listed flat, it read as three unrelated
+// things — the very complaint this grouping answers.
+describe('read areas are listed under the detail they belong to', () => {
+  const withGroups = (over: Partial<SheetSectionsInfo> = {}) => {
+    const { data } = buildData();
+    const docId = Object.keys(data.sectionsByDoc!)[0];
+    const base = data.sectionsByDoc![docId];
+    const one = base.sections[0];
+    const info: SheetSectionsInfo = {
+      ...base,
+      sections: [
+        { ...one, sectionId: 'REGION-01', label: 'PLAN - PEDESTAL P1' },
+        { ...one, sectionId: 'REGION-02', label: 'SECTION A-A - PEDESTAL P1' },
+        { ...one, sectionId: 'REGION-03', label: '20-16 vertical bars' },
+        { ...one, sectionId: 'REGION-04', label: 'PLAN - PEDESTAL P2' },
+      ],
+      logicalSections: [
+        {
+          id: 'SECTION-01',
+          title: 'PLAN - PEDESTAL P1',
+          kind: 'plan',
+          marks: ['P1'],
+          regionIds: ['REGION-01', 'REGION-02', 'REGION-03'],
+          relation: 'CONFIRMED',
+          basis: ['REGION-01 and REGION-02 are two views of PEDESTAL P1 [100]'],
+        },
+        {
+          id: 'SECTION-02',
+          title: 'PLAN - PEDESTAL P2',
+          kind: 'plan',
+          marks: ['P2'],
+          regionIds: ['REGION-04'],
+          relation: 'POSSIBLE_CONTINUATION',
+          basis: ['REGION-04 stands alone'],
+        },
+      ],
+      ...over,
+    };
+    return { ...data, sectionsByDoc: { [docId]: info } };
+  };
+
+  it('shows one heading per detail, with its read areas under it', async () => {
+    mount(withGroups(), (s) => s.openSheet('sh1'));
+    await waitFor(() => screen.getByTestId('section-group-SECTION-01'));
+
+    const p1 = screen.getByTestId('section-group-SECTION-01');
+    expect(p1.textContent).toMatch(/P1/);
+    expect(p1.textContent).toMatch(/3 read areas/);
+    for (const id of ['REGION-01', 'REGION-02', 'REGION-03']) {
+      expect(p1.textContent, id).toContain(id);
+    }
+    // the unrelated pedestal is its own detail, not folded in
+    const p2 = screen.getByTestId('section-group-SECTION-02');
+    expect(p2.textContent).toMatch(/P2/);
+    expect(p2.textContent).toContain('REGION-04');
+    expect(p1.textContent).not.toContain('REGION-04');
+  });
+
+  it('flags a grouping that rests on proximity alone', async () => {
+    mount(withGroups(), (s) => s.openSheet('sh1'));
+    await waitFor(() => screen.getByTestId('section-group-SECTION-02'));
+    expect(screen.getByTestId('section-group-SECTION-02').textContent).toMatch(/check grouping/);
+    expect(screen.getByTestId('section-group-SECTION-01').textContent).not.toMatch(/check grouping/);
+  });
+
+  it('an area the grouping did not place is still listed, not lost', async () => {
+    const data = withGroups();
+    const docId = Object.keys(data.sectionsByDoc!)[0];
+    const info = data.sectionsByDoc![docId];
+    mount(
+      {
+        ...data,
+        sectionsByDoc: {
+          [docId]: { ...info, sections: [...info.sections, { ...info.sections[0], sectionId: 'REGION-09' }] },
+        },
+      },
+      (s) => s.openSheet('sh1'),
+    );
+    await waitFor(() => screen.getByTestId('section-group-ungrouped'));
+    expect(screen.getByTestId('section-group-ungrouped').textContent).toContain('REGION-09');
+  });
+
+  it('with no grouping at all it lists the areas as before', async () => {
+    mount(withGroups({ logicalSections: [] }), (s) => s.openSheet('sh1'));
+    await waitFor(() => screen.getByTestId('section-group-all'));
+    expect(screen.getByTestId('section-group-all').textContent).toContain('REGION-01');
   });
 });

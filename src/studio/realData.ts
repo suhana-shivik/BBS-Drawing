@@ -13,6 +13,7 @@
 // behind `?demo` for a data-free look at the shell.
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { groupRegions } from '../cad/bbs/logicalSections';
 import type { BbsRow } from '../cad/bbs/types';
 import { reconcileRows } from '../../calculations/schedule';
 import { importCadDrawing, restoreCadDrawing } from '../cad/import';
@@ -95,8 +96,7 @@ import {
   removeProjectArtifactsForDocument,
   saveProjectArtifact,
   useProjectArtifacts,
-  type ProjectArtifact,
-} from '../register/artifacts';
+  type ProjectArtifact, updateProjectArtifact } from '../register/artifacts';
 import * as repo from '../cad/store';
 import { newId } from '../register/id';
 import type { DrawingRegisterEntry } from '../register/types';
@@ -199,6 +199,20 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { saveRun, markStaleByFacts, currentRun } from '../data/bbs';
 import { remoteDrawingIdFor, setDrawingStatus, syncDrawing, uploadDrawingFile } from '../data/drawings';
 import { insertReading } from '../data/readings';
+import {
+  applyEdits,
+  buildEditGrid,
+  disputesOf,
+  recalculate,
+  reconstructEngineInputs,
+  type BbsEditEvent,
+  type DisputeAcknowledgement,
+  type CellEdit,
+  type EditableGrid,
+  type EditRejection,
+} from '../../calculations/bbsEdit';
+import { buildChatResult } from '../cad/bbs/chatResult';
+import type { BbsResult } from '../cad/bbs/types';
 
 /** How the shell reports to the user; App passes the toast function in. */
 export type Notify = (message: string, kind?: 'ok' | 'warn') => void;
@@ -1571,7 +1585,19 @@ export function useRealStudioData(store: StudioStore, notify: Notify, project: S
     if (restoredProjectId !== projectId) {
       restoredProjectId = projectId;
       clearCadSession();
-      void restoreCadDrawing(projectId);
+      // AND SHOW IT. Restoring the drawings put them back in the session and
+      // then left the canvas empty: the register listed four drawings, the
+      // viewport showed bare grid, and the only way to see anything was to
+      // know to click one. A restored project opens on its drawing.
+      //
+      // Only when nothing is open — reopening a project mid-session must not
+      // yank the sheet the person is on back to the first one.
+      void restoreCadDrawing(projectId).then((doc) => {
+        if (!alive || !doc) return;
+        if (store.getState().sheets.active) return;
+        const sheet = cadSheets().find((s) => s.doc.id === doc.id) ?? activeCadSheet();
+        if (sheet) store.openSheet(sheet.id);
+      });
     }
     setPdfEntries([]);
     setPackages([]);
@@ -3492,6 +3518,307 @@ export function useRealStudioData(store: StudioStore, notify: Notify, project: S
    * exactly the filename that folder shows. The rows are re-adapted from the
    * stored engine result, so an old version exports as the document it was.
    */
+
+  // ------------------------------------------------------------
+  // EXPAND / EDIT — stages 3 and 4
+  // ------------------------------------------------------------
+
+  /**
+   * A filed schedule as an editable grid.
+   *
+   * The rows are RECOMPUTED from the inputs the artifact carries rather than
+   * read out of it, so what a person edits is always the schedule the current
+   * engine produces from those inputs. An artifact filed before engine inputs
+   * were recorded cannot be rebuilt, and returns null rather than offering a
+   * half-editable grid.
+   */
+  const bbsEditorGrid = useCallback(
+    (artifactId: string): EditableGrid | null => {
+      const artifact = artifacts.find((a) => a.id === artifactId);
+      if (!artifact || artifact.kind !== 'bbs' || artifact.mimeType !== 'application/json') return null;
+      try {
+        const stored = JSON.parse(artifact.content) as BbsChatResult;
+        // A schedule filed before builds recorded their inputs is rebuilt from
+        // what it does record, and every row is checked against the filed
+        // numbers. Rows that do not reproduce ride along as MISMATCH rather
+        // than closing the whole schedule to editing.
+        const rebuilt = stored.engineInputs
+          ? { inputs: stored.engineInputs, unreproduced: [] as string[] }
+          : reconstructEngineInputs(stored);
+        if (!rebuilt) return null;
+        const { inputs, unreproduced } = rebuilt;
+        const { rows, summary, reconciliation } = recalculate(inputs);
+        const hash = docHashes.get(artifact.documentId);
+        return buildEditGrid(rows, inputs, {
+          summary,
+          reconciliation,
+          unreproduced,
+          // A sanity failure or a verifier's dispute survives a rebuild: the
+          // arithmetic was never what it doubted.
+          disputes: disputesOf(stored),
+          verificationOk: stored.verification?.ok,
+          drawingHashMatches: hash && stored.drawingHash ? hash === stored.drawingHash : undefined,
+        });
+      } catch {
+        return null;
+      }
+    },
+    [artifacts, docHashes],
+  );
+
+  /**
+   * Stage 4 in one call, in order:
+   *
+   *   validate every edit → USER_INPUT DataFact beside the drawing's own value
+   *   → invalidate the rows that read it → recompute through
+   *   `calculations/schedule.ts` → steel summary → reconciliation →
+   *   engineering validation → file the result as the next version.
+   *
+   * Nothing here computes a length, a count or a weight: `applyEdits` calls
+   * the same `scheduleRow` the build does. An edit that fails validation
+   * changes nothing at all, and the previous version stays on file whatever
+   * happens — it is the audit trail.
+   */
+  const saveBbsEdits = useCallback(
+    async (
+      artifactId: string,
+      edits: readonly CellEdit[],
+      opts: { asNewVersion?: boolean; acknowledged?: readonly string[] } = {},
+    ): Promise<{
+      status: 'FINAL' | 'INCOMPLETE';
+      version: number;
+      artifactId: string;
+      newVersion: boolean;
+      rejected: readonly EditRejection[];
+      recalculated: number;
+      facts: number;
+    } | null> => {
+      const artifact = artifacts.find((a) => a.id === artifactId);
+      if (!artifact || artifact.kind !== 'bbs' || artifact.mimeType !== 'application/json') return null;
+
+      let stored: BbsChatResult;
+      try {
+        stored = JSON.parse(artifact.content) as BbsChatResult;
+      } catch {
+        return null;
+      }
+      const recovered = stored.engineInputs
+        ? { inputs: stored.engineInputs, unreproduced: [] as string[] }
+        : reconstructEngineInputs(stored);
+      if (!recovered) return null;
+      const { inputs, unreproduced } = recovered;
+
+      // A row the reconstruction could not reproduce is not edited: saving it
+      // would replace a filed number with one nobody can trace.
+      const refused = edits
+        .filter((e) => unreproduced.includes(e.barMark))
+        .map((e) => ({
+          barMark: e.barMark,
+          field: e.field,
+          value: e.value,
+          reason:
+            'this row was filed before its inputs were recorded and could not be reproduced — rebuild the BBS for this drawing to edit it',
+        }));
+      if (refused.length) {
+        return {
+          status: 'INCOMPLETE' as const,
+          version: artifact.version,
+          artifactId: artifact.id,
+          newVersion: false,
+          rejected: refused,
+          recalculated: 0,
+          facts: 0,
+        };
+      }
+
+      const hash = docHashes.get(artifact.documentId);
+      const drawingHashMatches = hash && stored.drawingHash ? hash === stored.drawingHash : undefined;
+      const { rows } = recalculate(inputs);
+      const standing = disputesOf(stored, opts.acknowledged ?? []);
+      const out = applyEdits(rows, inputs, edits, {
+        drawingHashMatches,
+        disputes: standing,
+        verificationOk: stored.verification?.ok,
+      });
+
+      // Nothing is written when an edit did not validate: a half-applied save
+      // would leave the schedule in a state nobody chose.
+      if (out.rejected.length) {
+        return {
+          status: out.status,
+          version: artifact.version,
+          artifactId: artifact.id,
+          newVersion: false,
+          rejected: out.rejected,
+          recalculated: 0,
+          facts: 0,
+        };
+      }
+
+      // A dispute is settled by a person saying they have checked it, and that
+      // is recorded with their name on it — not silently dropped.
+      const acknowledged: DisputeAcknowledgement[] = [
+        ...((stored as { acknowledged?: DisputeAcknowledgement[] }).acknowledged ?? []),
+        ...(opts.acknowledged ?? []).map((dispute) => ({ dispute, by: 'you', at: Date.now() })),
+      ];
+
+      // 1. THE FACTS. A person's figure is SUPPLIED and attributable. Where it
+      //    displaces something the drawing stated, it goes in as an explicit
+      //    override — a plain SUPPLIED record is (rightly) refused against a
+      //    DECLARED reading, and the reading stays on the record either way.
+      let ledger = ledgerRef.current;
+      for (const fact of out.facts) {
+        if (fact.value === null) continue;
+        const current = resolveFact(ledger, fact.factId);
+        const evidence = [
+          `entered in the editable schedule for ${artifact.drawingNumber || artifact.drawingName}`,
+          ...(fact.confirmed ? ['confirmed by the editor as read from the drawing or stated by the designer'] : []),
+          ...(fact.previous ? [`replaces ${fact.previous.source} ${fact.previous.value}`] : []),
+        ];
+        if (current && current.state !== 'MISSING' && current.state !== 'SUPPLIED') {
+          ledger = overrideFact(ledger, fact.factId, {
+            value: fact.value,
+            suppliedBy: 'you',
+            evidence,
+            ...(artifact.drawingNumber ? { askedOn: artifact.drawingNumber } : {}),
+          });
+        } else {
+          const res = recordFact(ledger, {
+            id: fact.factId,
+            value: fact.value,
+            ...(fact.unit ? { unit: fact.unit } : {}),
+            state: 'SUPPLIED',
+            suppliedBy: 'you',
+            saidAs: fact.saidAs,
+            evidence,
+            neededFor: fact.affects,
+            readOn: new Date().toISOString().slice(0, 10),
+          });
+          ledger = res.ledger;
+        }
+      }
+      await commitLedger(ledger);
+
+      // 2. THE RESULT, through the one builder. A synthesised BbsResult keeps
+      //    every consumer — the sheet, the workbook, the summary — reading the
+      //    same rows the pipeline just produced.
+      const rebuilt: BbsResult = {
+        settings: out.inputs.settings,
+        members: Object.values(out.inputs.members),
+        rows: out.rows,
+        summary: out.summary,
+        reconciliation: out.reconciliation,
+        validation: out.validation,
+        engineInputs: out.inputs,
+        incomplete: out.rows
+          .filter((r) => r.missing)
+          .map((r) => ({ barMark: r.barMark, reason: r.missing ?? '' })),
+        interpretation: {
+          members: Object.values(out.inputs.members),
+          bars: Object.values(out.inputs.bars),
+          unresolved: [],
+        },
+        ...(stored.manifest ? { manifest: stored.manifest } : {}),
+      };
+      const next = buildChatResult({
+        id: `edited-${Date.now()}`,
+        drawingName: artifact.drawingName,
+        result: rebuilt,
+        verification: stored.verification,
+        settings: out.inputs.settings,
+        reconciliation: out.reconciliation,
+        ...(stored.manifest ? { manifest: stored.manifest } : {}),
+        ...(stored.drawingHash ? { drawingHash: stored.drawingHash } : {}),
+        ...(stored.assumptions ? { assumptions: stored.assumptions } : {}),
+        ...(stored.gaps ? { gaps: stored.gaps } : {}),
+        builtAt: Date.now(),
+      });
+
+      // 3. THE AUDIT ENTRY. Correcting in place must not cost the record of
+      //    what was corrected, so every edit is kept on the artifact with the
+      //    value it replaced and where that value came from.
+      const previous = (stored as { history?: BbsEditEvent[] }).history ?? [];
+      const event: BbsEditEvent = {
+        at: Date.now(),
+        by: 'you',
+        ...(opts.acknowledged?.length ? { acknowledged: [...opts.acknowledged] } : {}),
+        edits: out.facts.map((f) => ({
+          factId: f.factId,
+          to: f.value,
+          ...(f.previous ? { from: f.previous.value, fromSource: f.previous.source } : {}),
+          override: f.override,
+          ...(f.confirmed ? { confirmed: true } : {}),
+          affects: f.affects,
+        })),
+        rowsRecalculated: out.invalidated,
+        statusBefore: stored.validation?.label ?? 'INCOMPLETE',
+        statusAfter: out.status,
+        reconciled: out.reconciliation.ok,
+        netWeightKg: out.summary.reduce((n, s) => n + s.totalWeightKg, 0),
+      };
+      (next as { history?: BbsEditEvent[] }).history = [...previous, event];
+      if (acknowledged.length) {
+        (next as { acknowledged?: DisputeAcknowledgement[] }).acknowledged = acknowledged;
+      }
+
+      // 4. WRITTEN BACK TO THE SCHEDULE THAT WAS OPENED.
+      //
+      //    A recalculation is not a revision. Completing a blocked row in
+      //    "pedestal-BBS-v1" leaves you with "pedestal-BBS-v1", corrected —
+      //    the same id, the same version, the same file name. A new version
+      //    is a deliberate act, and `asNewVersion` is that act.
+      const content = JSON.stringify(next);
+      const saved = opts.asNewVersion
+        ? await saveProjectArtifact({
+            projectId,
+            documentId: artifact.documentId,
+            kind: 'bbs',
+            drawingName: artifact.drawingName,
+            drawingNumber: artifact.drawingNumber,
+            revision: artifact.revision,
+            mimeType: 'application/json',
+            content,
+          })
+        : await updateProjectArtifact(projectId, artifactId, content);
+      if (!saved) return null;
+
+      // 5. THE CALCULATION RUN, which is where the per-run history lives. The
+      //    artifact is one document; the runs behind it are many.
+      if (isSupabaseConfigured()) {
+        try {
+          await saveRun({
+            projectId,
+            drawingId: remoteDrawingIdFor(artifact.documentId),
+            drawingHash: stored.drawingHash ?? null,
+            result: next,
+            ...(stored.manifest ? { manifest: stored.manifest } : {}),
+            snapshot: [
+              `EDIT ${new Date(event.at).toISOString()} — ${event.edits.length} input(s), ` +
+                `${event.rowsRecalculated.length} row(s) recalculated, ${event.statusBefore} → ${event.statusAfter}`,
+              ...event.edits.map(
+                (e) => `  ${e.factId}: ${e.from ?? '(none)'} → ${e.to}${e.override ? ' (override)' : ''}`,
+              ),
+            ],
+          });
+        } catch {
+          // The schedule is saved; its run record is a second write and must
+          // not be able to undo the first.
+        }
+      }
+
+      return {
+        status: out.status,
+        version: saved.version,
+        artifactId: saved.id,
+        newVersion: Boolean(opts.asNewVersion),
+        rejected: [],
+        recalculated: out.invalidated.length,
+        facts: out.facts.length,
+      };
+    },
+    [artifacts, commitLedger, docHashes, projectId],
+  );
+
   const downloadArtifact = useCallback(
     (artifactId: string, format: 'xlsx' | 'csv'): string | null => {
       const artifact = artifacts.find((a) => a.id === artifactId);
@@ -4026,6 +4353,50 @@ export function useRealStudioData(store: StudioStore, notify: Notify, project: S
         residual: pkg ? residualFor(pkg) : [],
         unexplainedGap: view.unexplainedGap,
         gaps: pkg ? gapClustersFor(docId, pkg) : [],
+        // THE DETAILS, not the clusters. Grouped from the regions the splitter
+        // cut and the gaps it could not place, by what they describe — a
+        // shared member mark, the same subject ("PLAN - PEDESTAL P1" and
+        // "SECTION A-A - PEDESTAL P1" are two views of one pedestal), or a
+        // gap touching a detail. Proximity alone never merges two details
+        // that each say who they are.
+        logicalSections: pkg
+          ? (() => {
+              const final = finalizationFor(docId, pkg);
+              const gaps = gapClustersFor(docId, pkg);
+              const asRegion = (b: { xMin: number; yMin: number; xMax: number; yMax: number }) => ({
+                x1: b.xMin,
+                y1: b.yMin,
+                x2: b.xMax,
+                y2: b.yMax,
+              });
+              const { sections } = groupRegions([
+                ...final.regions.map((r) => ({
+                  id: r.sectionId,
+                  label: r.label,
+                  kind: r.kind,
+                  evidenceIds: r.entityIds,
+                  bounds: asRegion(r.bounds),
+                })),
+                ...gaps.map((g) => ({
+                  id: g.id,
+                  kind: 'gap',
+                  evidenceIds: [] as string[],
+                  bounds: asRegion(g.bounds),
+                  isGap: true,
+                  joins: g.touches,
+                })),
+              ]);
+              return sections.map((s) => ({
+                id: s.id,
+                ...(s.title ? { title: s.title } : {}),
+                kind: s.kind,
+                marks: s.marks,
+                regionIds: s.regionIds,
+                relation: s.relation,
+                basis: s.basis,
+              }));
+            })()
+          : [],
         sections: pkg
           ? (() => {
               const ink = sectionInkMap(docId, pkg);
@@ -4193,6 +4564,8 @@ export function useRealStudioData(store: StudioStore, notify: Notify, project: S
       actions: {
         importDrawing,
         downloadArtifact,
+        bbsEditorGrid,
+        saveBbsEdits,
         deleteDrawing,
         renameDrawing,
         createFolder: createUserFolder,

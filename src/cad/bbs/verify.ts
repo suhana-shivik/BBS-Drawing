@@ -200,7 +200,7 @@ export function gateCoverage(input: VerifyInput): VerificationFailure[] {
   // every declared element has a verdict
   if (input.declared && input.dispositions) {
     const cov = checkDispositionCoverage(
-      input.declared as never,
+      input.declared,
       input.dispositions,
       members.map((m) => m.mark),
     );
